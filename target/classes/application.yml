@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: jspcs-pos
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/jspcs_pos}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+server:
+  port: 8081
+  error:
+    include-message: always
+
+logging:
+  level:
+    com.jspcs.pos: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
