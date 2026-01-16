@@ -21,6 +21,7 @@ public class ProductResponse {
     private String brand;
     private String unitOfMeasure;
     private BigDecimal sellingPrice;
+    private BigDecimal costPrice;
     private BigDecimal gstRate;
     private String hsnCode;
     private Boolean isTaxable;
