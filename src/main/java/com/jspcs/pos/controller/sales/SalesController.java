@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -21,22 +22,17 @@ public class SalesController {
     private final ISalesService salesService;
 
     @PostMapping("/invoices")
+    @PreAuthorize("hasRole('CASHIER') or hasRole('ADMIN')")
     public ResponseEntity<InvoiceResponse> createInvoice(@Valid @RequestBody CreateInvoiceRequest request) {
-        // Assume principal is username, need to fetch user ID.
-        // For now, let's assume we can lookup user by username or pass a dummy ID for
-        // MVP generation
-        // Logic: userService.findByUsername(auth.getName()).getId()
-        // Here I'll hardcode or skip auth-lookup logic to keep generation simple as
-        // requested ("Generate code... do not skip critical classes")
-        // But "Authentication" is critical.
-        // I will pass a Placeholder UUID or modify Service to look up via Auth Context.
-        // Service should handle it ideally via SecurityContext.
-        // But for this output, I'll pass a dummy UUID. The user of this code will wire
-        // it up properly.
-        // Better: Use a dedicated "UserContext" service.
-        UUID dummyCashierId = UUID.randomUUID();
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        // We need to find the user by username to get the ID.
+        // For simplicity, let's assume we add a method to IUserService for this or use
+        // UserRepository if injected.
+        // Better yet, update ISalesService to take username instead of UUID if
+        // possible,
+        // but let's stick to the current service contract and fetch the ID here.
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(salesService.createInvoice(request, dummyCashierId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(salesService.createInvoiceByUsername(request, username));
     }
 
     @GetMapping("/invoices/{id}")

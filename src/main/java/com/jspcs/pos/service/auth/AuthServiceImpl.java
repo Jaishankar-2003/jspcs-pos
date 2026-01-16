@@ -5,8 +5,12 @@ import com.jspcs.pos.dto.response.auth.LoginResponse;
 import com.jspcs.pos.entity.user.User;
 import com.jspcs.pos.exception.model.BusinessException;
 import com.jspcs.pos.repository.UserRepository;
+import com.jspcs.pos.security.util.JwtUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,33 +20,27 @@ import java.time.LocalDateTime;
 public class AuthServiceImpl implements IAuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
 
     @Override
     public LoginResponse login(LoginRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = jwtUtils.generateJwtToken(authentication);
+
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new BusinessException("Invalid username or password", "AUTH_FAILED"));
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new BusinessException("Invalid username or password", "AUTH_FAILED");
-        }
-
-        if (!user.getIsActive()) {
-            throw new BusinessException("User account is inactive", "ACCOUNT_INACTIVE");
-        }
+                .orElseThrow(() -> new BusinessException("User not found after authentication", "AUTH_ERROR"));
 
         user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
 
-        // JWT generation logic would go here. For now returning simple response
-        // (Simulating token)
-        String token = "simulated-jwt-token-" + user.getId();
-
         return LoginResponse.builder()
-                .token(token)
+                .token(jwt)
                 .username(user.getUsername())
                 .role(user.getRole().getName())
-                // .permissions(...) map permissions
                 .expiresAt(LocalDateTime.now().plusHours(8))
                 .build();
     }

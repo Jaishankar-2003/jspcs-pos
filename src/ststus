@@ -33,3 +33,8 @@ The foundation is now solid. The next phase should focus on:
 Backend Integration: Replacing the current mock data in the frontend with real API calls to the Spring Boot service.
 Hardware Prep: Finalizing the barcode scanner integration for high-speed billing.
 Print Engine: Implementing the receipt generation and printing logic.
+
+
+
+
+ JAVA_HOME=/home/sri-jaya-shankaran/.sdkman/candidates/java/21.0.9-tem echo "test" | ./run.sh

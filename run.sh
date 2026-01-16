@@ -22,14 +22,15 @@ read -s DB_PASS_INPUT
 echo ""
 echo ""
 
-# Use 'test' if input is empty
-DB_PASS=${DB_PASS_INPUT:-test}
+# Use 'password' if input is empty
+DB_PASS=${DB_PASS_INPUT:-password}
 
-# Export as environment variable for the application
+# Export environment variables for the application
+export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/jspcs_pos
 export SPRING_DATASOURCE_PASSWORD=$DB_PASS
 
 # Just try to run the app
-echo "Starting Application with password: $DB_PASS"
+echo "Starting Application on port 5433 with password: $DB_PASS"
 echo "---------------------------------------------"
 
 mvn spring-boot:run

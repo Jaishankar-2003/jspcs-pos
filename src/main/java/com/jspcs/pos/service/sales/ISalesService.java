@@ -8,6 +8,8 @@ import java.util.UUID;
 public interface ISalesService {
     InvoiceResponse createInvoice(CreateInvoiceRequest request, UUID cashierId);
 
+    InvoiceResponse createInvoiceByUsername(CreateInvoiceRequest request, String username);
+
     InvoiceResponse getInvoice(UUID id);
 
     InvoiceResponse getInvoiceByNumber(String invoiceNumber);

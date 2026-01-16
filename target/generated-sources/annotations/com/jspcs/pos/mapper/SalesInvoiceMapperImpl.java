@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-01-16T02:26:50+0530",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.9 (Eclipse Adoptium)"
+    date = "2026-01-16T13:02:33+0530",
+    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.45.0.v20260101-2150, environment: Java 21.0.9 (Eclipse Adoptium)"
 )
 @Component
 public class SalesInvoiceMapperImpl implements SalesInvoiceMapper {
@@ -29,20 +29,20 @@ public class SalesInvoiceMapperImpl implements SalesInvoiceMapper {
 
         invoiceResponse.cashierName( invoiceCashierFullName( invoice ) );
         invoiceResponse.counterName( invoiceCounterName( invoice ) );
-        invoiceResponse.id( invoice.getId() );
-        invoiceResponse.invoiceNumber( invoice.getInvoiceNumber() );
-        invoiceResponse.invoiceDate( invoice.getInvoiceDate() );
-        invoiceResponse.invoiceTime( invoice.getInvoiceTime() );
         invoiceResponse.customerName( invoice.getCustomerName() );
         invoiceResponse.customerPhone( invoice.getCustomerPhone() );
-        invoiceResponse.subtotal( invoice.getSubtotal() );
         invoiceResponse.discountAmount( invoice.getDiscountAmount() );
+        invoiceResponse.grandTotal( invoice.getGrandTotal() );
+        invoiceResponse.id( invoice.getId() );
+        invoiceResponse.invoiceDate( invoice.getInvoiceDate() );
+        invoiceResponse.invoiceNumber( invoice.getInvoiceNumber() );
+        invoiceResponse.invoiceTime( invoice.getInvoiceTime() );
+        invoiceResponse.items( invoiceItemListToInvoiceItemResponseList( invoice.getItems() ) );
+        invoiceResponse.paymentStatus( invoice.getPaymentStatus() );
+        invoiceResponse.roundOff( invoice.getRoundOff() );
+        invoiceResponse.subtotal( invoice.getSubtotal() );
         invoiceResponse.taxableAmount( invoice.getTaxableAmount() );
         invoiceResponse.totalTaxAmount( invoice.getTotalTaxAmount() );
-        invoiceResponse.roundOff( invoice.getRoundOff() );
-        invoiceResponse.grandTotal( invoice.getGrandTotal() );
-        invoiceResponse.paymentStatus( invoice.getPaymentStatus() );
-        invoiceResponse.items( invoiceItemListToInvoiceItemResponseList( invoice.getItems() ) );
 
         return invoiceResponse.build();
     }
@@ -55,19 +55,19 @@ public class SalesInvoiceMapperImpl implements SalesInvoiceMapper {
 
         InvoiceItemResponse.InvoiceItemResponseBuilder invoiceItemResponse = InvoiceItemResponse.builder();
 
+        invoiceItemResponse.cgstAmount( item.getCgstAmount() );
+        invoiceItemResponse.discountAmount( item.getDiscountAmount() );
+        invoiceItemResponse.finalAmount( item.getFinalAmount() );
         invoiceItemResponse.id( item.getId() );
+        invoiceItemResponse.igstAmount( item.getIgstAmount() );
         invoiceItemResponse.lineNumber( item.getLineNumber() );
         invoiceItemResponse.productName( item.getProductName() );
         invoiceItemResponse.productSku( item.getProductSku() );
-        invoiceItemResponse.unitPrice( item.getUnitPrice() );
         invoiceItemResponse.quantity( item.getQuantity() );
-        invoiceItemResponse.discountAmount( item.getDiscountAmount() );
-        invoiceItemResponse.taxableAmount( item.getTaxableAmount() );
-        invoiceItemResponse.cgstAmount( item.getCgstAmount() );
         invoiceItemResponse.sgstAmount( item.getSgstAmount() );
-        invoiceItemResponse.igstAmount( item.getIgstAmount() );
+        invoiceItemResponse.taxableAmount( item.getTaxableAmount() );
         invoiceItemResponse.totalTaxAmount( item.getTotalTaxAmount() );
-        invoiceItemResponse.finalAmount( item.getFinalAmount() );
+        invoiceItemResponse.unitPrice( item.getUnitPrice() );
 
         return invoiceItemResponse.build();
     }
