@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-01-16T13:02:41+0530",
-    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.45.0.v20260101-2150, environment: Java 21.0.9 (Eclipse Adoptium)"
+    date = "2026-01-16T13:07:41+0530",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.17 (Ubuntu)"
 )
 @Component
 public class UserMapperImpl implements UserMapper {
@@ -24,10 +24,10 @@ public class UserMapperImpl implements UserMapper {
 
         User.UserBuilder<?, ?> user = User.builder();
 
-        user.email( request.getEmail() );
-        user.fullName( request.getFullName() );
-        user.phone( request.getPhone() );
         user.username( request.getUsername() );
+        user.fullName( request.getFullName() );
+        user.email( request.getEmail() );
+        user.phone( request.getPhone() );
 
         return user.build();
     }
@@ -42,14 +42,14 @@ public class UserMapperImpl implements UserMapper {
 
         userResponse.roleName( userRoleName( user ) );
         userResponse.cashierCounterName( userCashierCounterName( user ) );
-        userResponse.createdAt( user.getCreatedAt() );
-        userResponse.email( user.getEmail() );
-        userResponse.fullName( user.getFullName() );
         userResponse.id( user.getId() );
+        userResponse.username( user.getUsername() );
+        userResponse.fullName( user.getFullName() );
+        userResponse.email( user.getEmail() );
+        userResponse.phone( user.getPhone() );
         userResponse.isActive( user.getIsActive() );
         userResponse.lastLoginAt( user.getLastLoginAt() );
-        userResponse.phone( user.getPhone() );
-        userResponse.username( user.getUsername() );
+        userResponse.createdAt( user.getCreatedAt() );
 
         return userResponse.build();
     }

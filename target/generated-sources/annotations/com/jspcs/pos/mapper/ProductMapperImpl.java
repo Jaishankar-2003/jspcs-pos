@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-01-16T13:02:41+0530",
-    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.45.0.v20260101-2150, environment: Java 21.0.9 (Eclipse Adoptium)"
+    date = "2026-01-16T13:07:41+0530",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.17 (Ubuntu)"
 )
 @Component
 public class ProductMapperImpl implements ProductMapper {
@@ -24,18 +24,18 @@ public class ProductMapperImpl implements ProductMapper {
         Product.ProductBuilder<?, ?> product = Product.builder();
 
         product.hsnCode( request.getHsnCode() );
+        product.sku( request.getSku() );
         product.barcode( request.getBarcode() );
-        product.brand( request.getBrand() );
-        product.category( request.getCategory() );
-        product.costPrice( request.getCostPrice() );
+        product.name( request.getName() );
         product.description( request.getDescription() );
+        product.category( request.getCategory() );
+        product.brand( request.getBrand() );
+        product.unitOfMeasure( request.getUnitOfMeasure() );
+        product.sellingPrice( request.getSellingPrice() );
+        product.costPrice( request.getCostPrice() );
         product.gstRate( request.getGstRate() );
         product.isTaxable( request.getIsTaxable() );
         product.lowStockThreshold( request.getLowStockThreshold() );
-        product.name( request.getName() );
-        product.sellingPrice( request.getSellingPrice() );
-        product.sku( request.getSku() );
-        product.unitOfMeasure( request.getUnitOfMeasure() );
 
         return product.build();
     }
@@ -50,18 +50,18 @@ public class ProductMapperImpl implements ProductMapper {
 
         productResponse.currentStock( productInventoryCurrentStock( product ) );
         productResponse.availableStock( productInventoryAvailableStock( product ) );
+        productResponse.id( product.getId() );
+        productResponse.sku( product.getSku() );
         productResponse.barcode( product.getBarcode() );
-        productResponse.brand( product.getBrand() );
+        productResponse.name( product.getName() );
         productResponse.category( product.getCategory() );
+        productResponse.brand( product.getBrand() );
+        productResponse.unitOfMeasure( product.getUnitOfMeasure() );
+        productResponse.sellingPrice( product.getSellingPrice() );
         productResponse.gstRate( product.getGstRate() );
         productResponse.hsnCode( product.getHsnCode() );
-        productResponse.id( product.getId() );
-        productResponse.isActive( product.getIsActive() );
         productResponse.isTaxable( product.getIsTaxable() );
-        productResponse.name( product.getName() );
-        productResponse.sellingPrice( product.getSellingPrice() );
-        productResponse.sku( product.getSku() );
-        productResponse.unitOfMeasure( product.getUnitOfMeasure() );
+        productResponse.isActive( product.getIsActive() );
 
         return productResponse.build();
     }
