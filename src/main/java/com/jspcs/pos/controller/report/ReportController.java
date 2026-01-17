@@ -1,40 +1,75 @@
 package com.jspcs.pos.controller.report;
 
-import com.jspcs.pos.dto.response.sales.InvoiceResponse;
-import com.jspcs.pos.service.sales.ISalesService;
+import com.jspcs.pos.service.report.ReportService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/reports")
 @RequiredArgsConstructor
+@Slf4j
 public class ReportController {
 
-    private final ISalesService salesService;
+    private final ReportService reportService;
 
     @GetMapping("/sales/daily")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
     public ResponseEntity<Map<String, Object>> getDailyReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        // This is a placeholder. In a real app, ISalesService or a dedicated
-        // IReportService
-        // would have methods for this.
-        // For MVP, we'll return a simple map.
-        Map<String, Object> report = new HashMap<>();
-        report.put("date", date);
-        report.put("totalSales", 0); // Placeholder
-        report.put("invoiceCount", 0); // Placeholder
-        return ResponseEntity.ok(report);
+        log.info("Getting daily sales report for date: {}", date);
+        return ResponseEntity.ok(reportService.getDailySalesReport(date));
+    }
+
+    @GetMapping("/sales/monthly")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<Map<String, Object>> getMonthlyReport(
+            @RequestParam int year,
+            @RequestParam int month) {
+        log.info("Getting monthly sales report for year: {}, month: {}", year, month);
+        return ResponseEntity.ok(reportService.getMonthlySalesReport(year, month));
+    }
+
+    @GetMapping("/sales/product-wise")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<List<Map<String, Object>>> getProductWiseReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "50") int limit) {
+        log.info("Getting product-wise sales report from {} to {}", startDate, endDate);
+        return ResponseEntity.ok(reportService.getProductWiseSalesReport(startDate, endDate, limit));
+    }
+
+    @GetMapping("/gst")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<Map<String, Object>> getGstReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        log.info("Getting GST report from {} to {}", startDate, endDate);
+        return ResponseEntity.ok(reportService.getGstReport(startDate, endDate));
+    }
+
+    @GetMapping("/profit-loss")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<Map<String, Object>> getProfitLossReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        log.info("Getting profit & loss report from {} to {}", startDate, endDate);
+        return ResponseEntity.ok(reportService.getProfitLossReport(startDate, endDate));
+    }
+
+    @GetMapping("/sales/hourly")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<List<Map<String, Object>>> getHourlySalesReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        log.info("Getting hourly sales report for date: {}", date);
+        return ResponseEntity.ok(reportService.getHourlySalesReport(date));
     }
 }
