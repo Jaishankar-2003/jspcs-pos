@@ -36,8 +36,11 @@ export const LoginPage = () => {
             } else {
                 navigate('/cashier/billing');
             }
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Invalid credentials');
+        } catch (error) {
+            const message = error instanceof Error && 'response' in error
+                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+                : 'Invalid credentials';
+            toast.error(message || 'Invalid credentials');
         }
     };
 

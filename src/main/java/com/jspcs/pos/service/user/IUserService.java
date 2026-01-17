@@ -11,5 +11,8 @@ public interface IUserService {
 
     UserResponse getUser(UUID id);
 
+    UserResponse getCurrentUser();
+
     List<UserResponse> getAllUsers();
+
 }

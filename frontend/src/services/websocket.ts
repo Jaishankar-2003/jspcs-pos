@@ -3,7 +3,7 @@ import SockJS from 'sockjs-client';
 
 export interface WebSocketMessage {
   type: string;
-  data: any;
+  data: unknown;
   timestamp: string;
 }
 
@@ -64,7 +64,7 @@ class WebSocketService {
       }
 
       const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
-      
+
       this.client = new Client({
         webSocketFactory: () => new SockJS(wsUrl),
         connectHeaders: {

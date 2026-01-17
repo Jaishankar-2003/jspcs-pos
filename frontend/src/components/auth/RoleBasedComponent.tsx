@@ -16,7 +16,7 @@ export const RoleBasedComponent: React.FC<RoleBasedComponentProps> = ({
   requireAll = false,
   fallback = null,
 }) => {
-  const { hasRole, hasAnyRole, hasPermission } = useAuth();
+  const { hasAnyRole, hasPermission } = useAuth();
 
   // Check role-based access
   const hasRequiredRole = roles.length === 0 || hasAnyRole(roles);
@@ -41,27 +41,27 @@ export const RoleBasedComponent: React.FC<RoleBasedComponentProps> = ({
 };
 
 // Specific role components for convenience
-export const AdminOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
+export const AdminOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({
+  children,
+  fallback
 }) => (
   <RoleBasedComponent roles={['ADMIN']} fallback={fallback}>
     {children}
   </RoleBasedComponent>
 );
 
-export const ManagerOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
+export const ManagerOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({
+  children,
+  fallback
 }) => (
   <RoleBasedComponent roles={['ADMIN', 'MANAGER']} fallback={fallback}>
     {children}
   </RoleBasedComponent>
 );
 
-export const CashierOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
+export const CashierOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({
+  children,
+  fallback
 }) => (
   <RoleBasedComponent roles={['ADMIN', 'MANAGER', 'CASHIER']} fallback={fallback}>
     {children}
@@ -69,36 +69,36 @@ export const CashierOnly: React.FC<{ children: React.ReactNode; fallback?: React
 );
 
 // Permission-based components
-export const CanCreateUsers: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
+export const CanCreateUsers: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({
+  children,
+  fallback
 }) => (
   <RoleBasedComponent permissions={['user_create']} fallback={fallback}>
     {children}
   </RoleBasedComponent>
 );
 
-export const CanManageProducts: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
+export const CanManageProducts: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({
+  children,
+  fallback
 }) => (
   <RoleBasedComponent permissions={['product_create', 'product_update', 'product_delete']} fallback={fallback}>
     {children}
   </RoleBasedComponent>
 );
 
-export const CanViewReports: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
+export const CanViewReports: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({
+  children,
+  fallback
 }) => (
   <RoleBasedComponent permissions={['reports_view']} fallback={fallback}>
     {children}
   </RoleBasedComponent>
 );
 
-export const CanApproveRefunds: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
+export const CanApproveRefunds: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({
+  children,
+  fallback
 }) => (
   <RoleBasedComponent permissions={['refunds_approve']} fallback={fallback}>
     {children}

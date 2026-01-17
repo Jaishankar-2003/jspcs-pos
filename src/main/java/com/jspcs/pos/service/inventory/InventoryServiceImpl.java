@@ -5,7 +5,9 @@ import com.jspcs.pos.dto.response.inventory.InventoryResponse;
 import com.jspcs.pos.entity.product.Inventory;
 import com.jspcs.pos.exception.model.EntityNotFoundException;
 import com.jspcs.pos.repository.InventoryRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class InventoryServiceImpl implements IInventoryService {
 
     private final InventoryRepository inventoryRepository;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional(readOnly = true)
@@ -45,7 +48,11 @@ public class InventoryServiceImpl implements IInventoryService {
         inventory.setCurrentStock(inventory.getCurrentStock() + request.getQuantity());
         inventory.setLastMovementAt(LocalDateTime.now());
 
-        return mapToResponse(inventoryRepository.save(inventory));
+        inventory = inventoryRepository.save(inventory);
+        entityManager.flush();
+        entityManager.refresh(inventory);
+
+        return mapToResponse(inventory);
     }
 
     @Override

@@ -25,8 +25,8 @@ export const useWebSocket = (autoConnect = true): UseWebSocketReturn => {
   const [lastStockAlert, setLastStockAlert] = useState<StockAlertMessage | null>(null);
   const [lastInvoiceCreated, setLastInvoiceCreated] = useState<InvoiceCreatedMessage | null>(null);
   const [lastSystemNotification, setLastSystemNotification] = useState<SystemNotificationMessage | null>(null);
-  
-  const subscriptionsRef = useRef<any[]>([]);
+
+  const subscriptionsRef = useRef<{ unsubscribe: () => void }[]>([]);
 
   const clearNotifications = useCallback(() => {
     setLastSalesUpdate(null);

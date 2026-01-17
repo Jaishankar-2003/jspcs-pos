@@ -13,7 +13,9 @@ import com.jspcs.pos.repository.RoleRepository;
 import com.jspcs.pos.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -60,6 +62,14 @@ public class UserServiceImpl implements IUserService {
     public UserResponse getUser(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        return userMapper.toResponse(user);
+    }
+
+    @Override
+    public UserResponse getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("Current user not found"));
         return userMapper.toResponse(user);
     }
 

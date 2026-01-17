@@ -29,6 +29,7 @@ com/jspcs/pos/repository/PaymentRepository.class
 com/jspcs/pos/entity/user/CashierCounter$CashierCounterBuilderImpl.class
 com/jspcs/pos/entity/product/Inventory.class
 com/jspcs/pos/security/config/SecurityConfig.class
+com/jspcs/pos/security/config/CustomAccessDeniedHandler.class
 com/jspcs/pos/mapper/UserMapper.class
 com/jspcs/pos/dto/request/sales/InvoiceItemRequest.class
 com/jspcs/pos/entity/sales/Refund$RefundStatus.class

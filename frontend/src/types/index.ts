@@ -63,5 +63,5 @@ export interface InvoiceResponse {
     totalAmount: number;
     status: string;
     createdAt: string;
-    items: any[]; // refine later
+    items: InvoiceSubItem[];
 }

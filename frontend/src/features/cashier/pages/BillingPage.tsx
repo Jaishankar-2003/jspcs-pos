@@ -48,8 +48,8 @@ export const BillingPage = () => {
         { id: "5", sku: "PROD-005", name: "Dark Chocolate 70%", sellingPrice: 180, currentStock: 65, unitOfMeasure: "bar" },
     ];
 
-    const handleProductSelect = (product: any) => {
-        addItem(product as Product);
+    const handleProductSelect = (product: Product) => {
+        addItem(product);
         setSearchTerm('');
         searchInputRef.current?.focus();
     };

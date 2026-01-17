@@ -1,0 +1,627 @@
+[[1;34mINFO[m] Scanning for projects...
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m---------------------------< [0;36mcom.jspcs:pos[0;1m >----------------------------[m
+[[1;34mINFO[m] [1mBuilding jspcs-pos 0.0.1-SNAPSHOT[m
+[[1;34mINFO[m] [1m--------------------------------[ jar ]---------------------------------[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m>>> [0;32mspring-boot-maven-plugin:3.2.1:run[m [1m(default-cli)[0;1m > [0;1mtest-compile[m @ [36mpos[0;1m >>>[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-resources-plugin:3.3.1:resources[m [1m(default-resources)[m @ [36mpos[0;1m ---[m
+[[1;34mINFO[m] Copying 1 resource from src/main/resources to target/classes
+[[1;34mINFO[m] Copying 2 resources from src/main/resources to target/classes
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-compiler-plugin:3.13.0:compile[m [1m(default-compile)[m @ [36mpos[0;1m ---[m
+[[1;34mINFO[m] Nothing to compile - all classes are up to date.
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-resources-plugin:3.3.1:testResources[m [1m(default-testResources)[m @ [36mpos[0;1m ---[m
+[[1;34mINFO[m] skip non existing resourceDirectory /home/sri-jaya-shankaran/jspcs-pos/src/test/resources
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-compiler-plugin:3.13.0:testCompile[m [1m(default-testCompile)[m @ [36mpos[0;1m ---[m
+[[1;34mINFO[m] Nothing to compile - all classes are up to date.
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m<<< [0;32mspring-boot-maven-plugin:3.2.1:run[m [1m(default-cli)[0;1m < [0;1mtest-compile[m @ [36mpos[0;1m <<<[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mspring-boot-maven-plugin:3.2.1:run[m [1m(default-cli)[m @ [36mpos[0;1m ---[m
+[[1;34mINFO[m] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.1)
+
+2026-01-17T11:52:16.265+05:30  INFO 62415 --- [jspcs-pos] [           main] com.jspcs.pos.PosApplication             : Starting PosApplication using Java 21.0.2 with PID 62415 (/home/sri-jaya-shankaran/jspcs-pos/target/classes started by sri-jaya-shankaran in /home/sri-jaya-shankaran/jspcs-pos)
+2026-01-17T11:52:16.268+05:30 DEBUG 62415 --- [jspcs-pos] [           main] com.jspcs.pos.PosApplication             : Running with Spring Boot v3.2.1, Spring v6.1.2
+2026-01-17T11:52:16.270+05:30  INFO 62415 --- [jspcs-pos] [           main] com.jspcs.pos.PosApplication             : No active profile set, falling back to 1 default profile: "default"
+2026-01-17T11:52:17.357+05:30  INFO 62415 --- [jspcs-pos] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-01-17T11:52:17.520+05:30  INFO 62415 --- [jspcs-pos] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 155 ms. Found 15 JPA repository interfaces.
+2026-01-17T11:52:18.952+05:30  INFO 62415 --- [jspcs-pos] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
+2026-01-17T11:52:18.969+05:30  INFO 62415 --- [jspcs-pos] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-01-17T11:52:18.970+05:30  INFO 62415 --- [jspcs-pos] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.17]
+2026-01-17T11:52:19.044+05:30  INFO 62415 --- [jspcs-pos] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-01-17T11:52:19.045+05:30  INFO 62415 --- [jspcs-pos] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2669 ms
+2026-01-17T11:52:19.205+05:30  INFO 62415 --- [jspcs-pos] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-01-17T11:52:19.382+05:30  INFO 62415 --- [jspcs-pos] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4ce25e47
+2026-01-17T11:52:19.415+05:30  INFO 62415 --- [jspcs-pos] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-01-17T11:52:19.551+05:30  INFO 62415 --- [jspcs-pos] [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-01-17T11:52:19.552+05:30  INFO 62415 --- [jspcs-pos] [           main] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-01-17T11:52:19.552+05:30  INFO 62415 --- [jspcs-pos] [           main] o.f.c.internal.license.VersionPrinter    : 
+2026-01-17T11:52:19.570+05:30  INFO 62415 --- [jspcs-pos] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5433/jspcs_pos (PostgreSQL 15.15)
+2026-01-17T11:52:19.629+05:30  INFO 62415 --- [jspcs-pos] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.036s)
+2026-01-17T11:52:19.645+05:30  INFO 62415 --- [jspcs-pos] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 2
+2026-01-17T11:52:19.648+05:30  INFO 62415 --- [jspcs-pos] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-01-17T11:52:19.757+05:30  INFO 62415 --- [jspcs-pos] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-01-17T11:52:19.819+05:30  INFO 62415 --- [jspcs-pos] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.1.Final
+2026-01-17T11:52:19.865+05:30  INFO 62415 --- [jspcs-pos] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-01-17T11:52:20.168+05:30  INFO 62415 --- [jspcs-pos] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-01-17T11:52:20.219+05:30  WARN 62415 --- [jspcs-pos] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-01-17T11:52:22.134+05:30  INFO 62415 --- [jspcs-pos] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-01-17T11:52:22.207+05:30  INFO 62415 --- [jspcs-pos] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-01-17T11:52:22.829+05:30 DEBUG 62415 --- [jspcs-pos] [           main] c.j.p.s.filter.JwtAuthenticationFilter   : Filter 'jwtAuthenticationFilter' configured for use
+2026-01-17T11:52:23.033+05:30  INFO 62415 --- [jspcs-pos] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-01-17T11:52:24.838+05:30  INFO 62415 --- [jspcs-pos] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@2f04c1f3, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@56d5a50f, org.springframework.security.web.context.SecurityContextHolderFilter@541c7857, org.springframework.security.web.header.HeaderWriterFilter@57832650, org.springframework.web.filter.CorsFilter@72d9bd09, org.springframework.security.web.authentication.logout.LogoutFilter@7e56e272, com.jspcs.pos.security.filter.JwtAuthenticationFilter@3c8c5513, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@4fdf83bb, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@75e81be2, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@1107891a, org.springframework.security.web.session.SessionManagementFilter@46f03d6d, org.springframework.security.web.access.ExceptionTranslationFilter@7288afd8, org.springframework.security.web.access.intercept.AuthorizationFilter@6aa27145]
+2026-01-17T11:52:25.678+05:30  INFO 62415 --- [jspcs-pos] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8081 (http) with context path ''
+2026-01-17T11:52:25.680+05:30  INFO 62415 --- [jspcs-pos] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+2026-01-17T11:52:25.682+05:30  INFO 62415 --- [jspcs-pos] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@5901caf8]]
+2026-01-17T11:52:25.683+05:30  INFO 62415 --- [jspcs-pos] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+2026-01-17T11:52:25.696+05:30  INFO 62415 --- [jspcs-pos] [           main] com.jspcs.pos.PosApplication             : Started PosApplication in 9.999 seconds (process running for 10.489)
+2026-01-17T11:52:25.806+05:30 DEBUG 62415 --- [jspcs-pos] [           main] org.hibernate.SQL                        : 
+    select
+        count(*) 
+    from
+        roles r1_0
+2026-01-17T11:52:25.806+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-1] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T11:52:25.819+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-1] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T11:52:25.835+05:30 DEBUG 62415 --- [jspcs-pos] [           main] org.hibernate.SQL                        : 
+    select
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at 
+    from
+        roles r1_0 
+    where
+        r1_0.name=?
+2026-01-17T11:52:25.909+05:30 DEBUG 62415 --- [jspcs-pos] [           main] org.hibernate.SQL                        : 
+    select
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at 
+    from
+        roles r1_0 
+    where
+        r1_0.name=?
+2026-01-17T11:52:25.915+05:30 DEBUG 62415 --- [jspcs-pos] [           main] org.hibernate.SQL                        : 
+    select
+        u1_0.id 
+    from
+        users u1_0 
+    where
+        u1_0.username=? 
+    fetch
+        first ? rows only
+2026-01-17T11:52:25.920+05:30 DEBUG 62415 --- [jspcs-pos] [           main] org.hibernate.SQL                        : 
+    select
+        u1_0.id 
+    from
+        users u1_0 
+    where
+        u1_0.username=? 
+    fetch
+        first ? rows only
+2026-01-17T11:52:25.924+05:30 DEBUG 62415 --- [jspcs-pos] [           main] org.hibernate.SQL                        : 
+    select
+        u1_0.id 
+    from
+        users u1_0 
+    where
+        u1_0.username=? 
+    fetch
+        first ? rows only
+2026-01-17T11:53:25.662+05:30  INFO 62415 --- [jspcs-pos] [MessageBroker-2] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 3, active threads = 1, queued tasks = 1, completed tasks = 1]
+2026-01-17T11:53:25.695+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-1] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T11:53:25.698+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-1] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T11:54:25.695+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-1] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T11:54:25.699+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-1] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T11:55:25.694+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-1] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T11:55:25.699+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-1] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T11:56:25.694+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T11:56:25.702+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T11:57:24.596+05:30  INFO 62415 --- [jspcs-pos] [nio-8081-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-01-17T11:57:24.596+05:30  INFO 62415 --- [jspcs-pos] [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-01-17T11:57:24.601+05:30  INFO 62415 --- [jspcs-pos] [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 4 ms
+2026-01-17T11:57:24.796+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-1] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.cashier_counter_id,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.is_active,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.role_id,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-01-17T11:57:24.805+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-1] org.hibernate.SQL                        : 
+    select
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at 
+    from
+        roles r1_0 
+    where
+        r1_0.id=?
+2026-01-17T11:57:24.846+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-1] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.cashier_counter_id,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.is_active,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.role_id,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-01-17T11:57:24.849+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-1] org.hibernate.SQL                        : 
+    select
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at 
+    from
+        roles r1_0 
+    where
+        r1_0.id=?
+2026-01-17T11:57:25.697+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T11:57:25.706+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T11:57:31.966+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-2] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.cashier_counter_id,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.is_active,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.role_id,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-01-17T11:57:31.969+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-2] org.hibernate.SQL                        : 
+    select
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at 
+    from
+        roles r1_0 
+    where
+        r1_0.id=?
+2026-01-17T11:57:32.060+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    where
+        i1_0.product_id=?
+2026-01-17T11:57:32.125+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-2] org.hibernate.SQL                        : 
+    update
+        inventory 
+    set
+        current_stock=?,
+        last_movement_at=?,
+        last_updated_by=?,
+        reserved_stock=?,
+        updated_at=?,
+        version=? 
+    where
+        product_id=? 
+        and version=?
+2026-01-17T11:57:32.141+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    where
+        i1_0.product_id=?
+2026-01-17T11:57:32.143+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-2] org.hibernate.SQL                        : 
+    select
+        p1_0.id,
+        p1_0.barcode,
+        p1_0.brand,
+        p1_0.category,
+        p1_0.cost_price,
+        p1_0.created_at,
+        p1_0.deleted_at,
+        p1_0.description,
+        p1_0.gst_rate,
+        p1_0.hsn_code,
+        p1_0.is_active,
+        p1_0.is_taxable,
+        p1_0.low_stock_threshold,
+        p1_0.name,
+        p1_0.selling_price,
+        p1_0.sku,
+        p1_0.unit_of_measure,
+        p1_0.updated_at,
+        p1_0.version 
+    from
+        products p1_0 
+    where
+        p1_0.id=?
+2026-01-17T11:58:25.696+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T11:58:25.704+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T11:59:25.695+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T11:59:25.709+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T12:00:25.694+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T12:00:25.697+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null

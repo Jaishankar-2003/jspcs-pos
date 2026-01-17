@@ -69,6 +69,7 @@
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/repository/StockMovementRepository.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/repository/UserRepository.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/security/config/AuthEntryPointJwt.java
+/home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/security/config/CustomAccessDeniedHandler.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/security/config/SecurityConfig.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/security/filter/JwtAuthenticationFilter.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/security/userdetails/UserDetailsServiceImpl.java
