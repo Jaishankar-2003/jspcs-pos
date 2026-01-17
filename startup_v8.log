@@ -4396,3 +4396,1102 @@
     where
         i1_0.current_stock=0 
         and p1_0.deleted_at is null
+2026-01-17T15:46:52.022+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:46:52.029+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:47:52.021+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:47:52.028+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:48:52.021+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:48:52.028+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:49:52.022+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:49:52.030+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:50:52.021+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:50:52.027+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:51:52.021+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:51:52.027+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:52:52.021+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:52:52.027+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:53:52.021+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:53:52.026+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:54:52.021+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:54:52.030+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:55:52.021+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:55:52.028+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:56:49.166+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-5] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.cashier_counter_id,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.is_active,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.role_id,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-01-17T15:56:49.194+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-5] org.hibernate.SQL                        : 
+    select
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at 
+    from
+        roles r1_0 
+    where
+        r1_0.id=?
+2026-01-17T15:56:49.246+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-5] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.cashier_counter_id,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.is_active,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.role_id,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-01-17T15:56:49.251+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-5] org.hibernate.SQL                        : 
+    select
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at 
+    from
+        roles r1_0 
+    where
+        r1_0.id=?
+2026-01-17T15:56:49.440+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-5] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.cashier_counter_id,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.is_active,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.role_id,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-01-17T15:56:49.442+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-5] org.hibernate.SQL                        : 
+    select
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at 
+    from
+        roles r1_0 
+    where
+        r1_0.id=?
+2026-01-17T15:56:49.445+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-5] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.cashier_counter_id,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.is_active,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.role_id,
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        users u1_0 
+    join
+        roles r1_0 
+            on r1_0.id=u1_0.role_id 
+    where
+        u1_0.id=?
+2026-01-17T15:56:49.449+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-5] org.hibernate.SQL                        : 
+    update
+        users 
+    set
+        cashier_counter_id=?,
+        deleted_at=?,
+        email=?,
+        full_name=?,
+        is_active=?,
+        last_login_at=?,
+        password_hash=?,
+        phone=?,
+        role_id=?,
+        updated_at=?,
+        username=? 
+    where
+        id=?
+2026-01-17T15:56:52.934+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:56:52.941+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:57:52.933+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:57:52.939+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:58:52.935+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:58:52.977+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T15:59:52.936+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T15:59:52.949+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T16:00:52.904+05:30  INFO 62415 --- [jspcs-pos] [MessageBroker-2] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 4, active threads = 1, queued tasks = 1, completed tasks = 125]
+2026-01-17T16:00:52.934+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-3] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T16:00:52.944+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-3] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T16:01:52.933+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T16:01:52.938+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T16:02:52.934+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T16:02:52.942+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T16:03:52.933+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T16:03:52.939+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T16:04:44.219+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-6] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.cashier_counter_id,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.is_active,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.role_id,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-01-17T16:04:44.240+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-6] org.hibernate.SQL                        : 
+    select
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at 
+    from
+        roles r1_0 
+    where
+        r1_0.id=?
+2026-01-17T16:04:44.296+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-6] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.cashier_counter_id,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.is_active,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.role_id,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-01-17T16:04:44.305+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-6] org.hibernate.SQL                        : 
+    select
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at 
+    from
+        roles r1_0 
+    where
+        r1_0.id=?
+2026-01-17T16:04:44.573+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-6] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.cashier_counter_id,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.is_active,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.role_id,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-01-17T16:04:44.574+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-6] org.hibernate.SQL                        : 
+    select
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at 
+    from
+        roles r1_0 
+    where
+        r1_0.id=?
+2026-01-17T16:04:44.578+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-6] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.cashier_counter_id,
+        u1_0.created_at,
+        u1_0.deleted_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.is_active,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.role_id,
+        r1_0.id,
+        r1_0.created_at,
+        r1_0.description,
+        r1_0.is_active,
+        r1_0.name,
+        r1_0.permissions,
+        r1_0.updated_at,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        users u1_0 
+    join
+        roles r1_0 
+            on r1_0.id=u1_0.role_id 
+    where
+        u1_0.id=?
+2026-01-17T16:04:44.581+05:30 DEBUG 62415 --- [jspcs-pos] [nio-8081-exec-6] org.hibernate.SQL                        : 
+    update
+        users 
+    set
+        cashier_counter_id=?,
+        deleted_at=?,
+        email=?,
+        full_name=?,
+        is_active=?,
+        last_login_at=?,
+        password_hash=?,
+        phone=?,
+        role_id=?,
+        updated_at=?,
+        username=? 
+    where
+        id=?
+2026-01-17T16:04:52.933+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T16:04:52.939+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T16:05:52.933+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T16:05:52.939+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-4] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T16:06:52.935+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T16:06:52.941+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
+2026-01-17T16:07:52.934+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock<=p1_0.low_stock_threshold 
+        and i1_0.current_stock>0 
+        and p1_0.deleted_at is null
+2026-01-17T16:07:52.942+05:30 DEBUG 62415 --- [jspcs-pos] [MessageBroker-2] org.hibernate.SQL                        : 
+    select
+        i1_0.product_id,
+        i1_0.available_stock,
+        i1_0.current_stock,
+        i1_0.last_movement_at,
+        i1_0.last_updated_by,
+        i1_0.reserved_stock,
+        i1_0.updated_at,
+        i1_0.version 
+    from
+        inventory i1_0 
+    join
+        products p1_0 
+            on p1_0.id=i1_0.product_id 
+    where
+        i1_0.current_stock=0 
+        and p1_0.deleted_at is null
