@@ -5495,3 +5495,9 @@
     where
         i1_0.current_stock=0 
         and p1_0.deleted_at is null
+2026-01-17T16:08:31.317+05:30  INFO 62415 --- [jspcs-pos] [ionShutdownHook] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopping...
+2026-01-17T16:08:31.321+05:30  INFO 62415 --- [jspcs-pos] [ionShutdownHook] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@5901caf8]]
+2026-01-17T16:08:31.323+05:30  INFO 62415 --- [jspcs-pos] [ionShutdownHook] o.s.m.s.b.SimpleBrokerMessageHandler     : Stopped.
+2026-01-17T16:08:31.392+05:30  INFO 62415 --- [jspcs-pos] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-01-17T16:08:31.403+05:30  INFO 62415 --- [jspcs-pos] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-01-17T16:08:31.414+05:30  INFO 62415 --- [jspcs-pos] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
