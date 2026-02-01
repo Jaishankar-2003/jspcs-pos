@@ -1,6 +1,7 @@
 package com.jspcs.pos.service.product;
 
 import com.jspcs.pos.dto.request.product.CreateProductRequest;
+import com.jspcs.pos.dto.request.product.UpdateProductRequest;
 import com.jspcs.pos.dto.response.product.ProductResponse;
 import com.jspcs.pos.entity.product.Product;
 import com.jspcs.pos.exception.model.BusinessException;
@@ -69,5 +70,36 @@ public class ProductServiceImpl implements IProductService {
         return productRepository.findAll().stream()
                 .map(productMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public ProductResponse updateProduct(UUID id, UpdateProductRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setCategory(request.getCategory());
+        product.setBrand(request.getBrand());
+        product.setUnitOfMeasure(request.getUnitOfMeasure());
+        product.setSellingPrice(request.getSellingPrice());
+        product.setCostPrice(request.getCostPrice());
+        product.setGstRate(request.getGstRate());
+        product.setHsnCode(request.getHsnCode());
+        product.setLowStockThreshold(request.getLowStockThreshold());
+        product.setIsTaxable(request.getIsTaxable());
+
+        product = productRepository.save(product);
+        return productMapper.toResponse(product);
+    }
+
+    @Override
+    @Transactional
+    public void deleteProduct(UUID id) {
+        if (!productRepository.existsById(id)) {
+            throw new EntityNotFoundException("Product not found");
+        }
+        productRepository.deleteById(id);
     }
 }

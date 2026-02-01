@@ -1,34 +1,70 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Search,
     Filter,
     Download,
     Calendar,
     Eye,
-    FileText
+    FileText,
+    Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { cn } from '@/utils/utils';
+import { salesApi } from '@/api/sales';
+import type { InvoiceResponse } from '@/types';
 
 export const InvoiceHistoryPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
+    const [invoices, setInvoices] = useState<InvoiceResponse[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Mock invoices data
-    const invoicesData = [
-        { id: 1, number: "INV-2024-001", date: "2024-01-16 10:15", customer: "Walk-in Customer", total: 1250.50, paymentMode: "CASH", cashier: "admin" },
-        { id: 2, number: "INV-2024-002", date: "2024-01-16 11:30", customer: "John Doe", total: 3420.00, paymentMode: "UPI", cashier: "admin" },
-        { id: 3, number: "INV-2024-003", date: "2024-01-16 12:45", customer: "Walk-in Customer", total: 450.00, paymentMode: "CARD", cashier: "cashier1" },
-        { id: 4, number: "INV-2024-004", date: "2024-01-16 13:20", customer: "Walk-in Customer", total: 890.00, paymentMode: "CASH", cashier: "admin" },
-        { id: 5, number: "INV-2024-005", date: "2024-01-16 14:10", customer: "Sarah Smith", total: 125.00, paymentMode: "UPI", cashier: "cashier1" },
-    ];
+    useEffect(() => {
+        const fetchInvoices = async () => {
+            try {
+                setLoading(true);
+                const data = await salesApi.getAll();
+                // Sort by date desc (assuming ID or date sorting from backend or here)
+                // Backend usually filters by ID asc/desc. Let's sorting client side for now.
+                const sorted = data.sort((a, b) => new Date(b.invoiceDate + ' ' + b.invoiceTime).getTime() - new Date(a.invoiceDate + ' ' + a.invoiceTime).getTime());
+                setInvoices(sorted);
+            } catch (error) {
+                console.error("Failed to load invoices", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchInvoices();
+    }, []);
 
-    const filteredInvoices = invoicesData.filter(inv =>
-        inv.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inv.customer.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredInvoices = invoices.filter(inv =>
+        inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inv.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const exportToCSV = () => {
+        if (invoices.length === 0) return;
+        const headers = ["Invoice Number", "Date", "Customer", "Amount", "Status", "Payment Mode"];
+        const rows = invoices.map(inv => [
+            inv.invoiceNumber,
+            `${inv.invoiceDate} ${inv.invoiceTime}`,
+            inv.customerName || "Walk-in",
+            inv.grandTotal,
+            inv.status || "PAID",
+            inv.paymentMode || "-"
+        ].map(e => `"${e}"`).join(","));
+
+        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "invoices_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     return (
         <div className="space-y-6">
@@ -38,11 +74,11 @@ export const InvoiceHistoryPage = () => {
                     <p className="text-muted-foreground">Review and manage past sales transactions.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => alert("Date filtering coming soon!")}>
                         <Calendar className="mr-2 h-4 w-4" />
                         Today
                     </Button>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={exportToCSV}>
                         <Download className="mr-2 h-4 w-4" />
                         Export All
                     </Button>
@@ -73,50 +109,59 @@ export const InvoiceHistoryPage = () => {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Invoice #</TableHead>
-                                <TableHead>Date & Time</TableHead>
-                                <TableHead>Customer</TableHead>
-                                <TableHead>Payment</TableHead>
-                                <TableHead className="text-right">Total Amount</TableHead>
-                                <TableHead>Cashier</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredInvoices.map((inv) => (
-                                <TableRow key={inv.id}>
-                                    <TableCell className="font-mono font-medium">{inv.number}</TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">{inv.date}</TableCell>
-                                    <TableCell>{inv.customer}</TableCell>
-                                    <TableCell>
-                                        <span className={cn(
-                                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border",
-                                            inv.paymentMode === "CASH" && "bg-orange-500/10 text-orange-500 border-orange-500/20",
-                                            inv.paymentMode === "UPI" && "bg-blue-500/10 text-blue-500 border-blue-500/20",
-                                            inv.paymentMode === "CARD" && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                                        )}>
-                                            {inv.paymentMode}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-right font-bold">₹{inv.total.toLocaleString()}</TableCell>
-                                    <TableCell className="text-sm">@{inv.cashier}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button variant="ghost" size="icon">
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon">
-                                                <FileText className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
+                    {loading ? (
+                        <div className="flex justify-center p-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Invoice #</TableHead>
+                                    <TableHead>Date & Time</TableHead>
+                                    <TableHead>Customer</TableHead>
+                                    <TableHead>Payment</TableHead>
+                                    <TableHead className="text-right">Total Amount</TableHead>
+                                    <TableHead>Cashier</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredInvoices.map((inv) => (
+                                    <TableRow key={inv.id}>
+                                        <TableCell className="font-mono font-medium">{inv.invoiceNumber}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {inv.invoiceDate} <span className="text-xs">{inv.invoiceTime}</span>
+                                        </TableCell>
+                                        <TableCell>{inv.customerName || 'Walk-in'}</TableCell>
+                                        <TableCell>
+                                            <span className={cn(
+                                                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border",
+                                                inv.paymentMode === "CASH" && "bg-orange-500/10 text-orange-500 border-orange-500/20",
+                                                inv.paymentMode === "UPI" && "bg-blue-500/10 text-blue-500 border-blue-500/20",
+                                                inv.paymentMode === "CARD" && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+                                                !inv.paymentMode && "bg-gray-100 text-gray-500 border-gray-200"
+                                            )}>
+                                                {inv.paymentMode || 'PENDING'}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-right font-bold">₹{inv.grandTotal?.toLocaleString()}</TableCell>
+                                        <TableCell className="text-sm">@{inv.cashierName || 'admin'}</TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button variant="ghost" size="icon">
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon">
+                                                    <FileText className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
             </Card>
         </div>

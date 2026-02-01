@@ -1,6 +1,7 @@
 package com.jspcs.pos.service.user;
 
 import com.jspcs.pos.dto.request.user.CreateUserRequest;
+import com.jspcs.pos.dto.request.user.UpdateUserRequest;
 import com.jspcs.pos.dto.response.user.UserResponse;
 import com.jspcs.pos.entity.user.CashierCounter;
 import com.jspcs.pos.entity.user.Role;
@@ -78,5 +79,39 @@ public class UserServiceImpl implements IUserService {
         return userRepository.findAll().stream()
                 .map(userMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUser(UUID id, UpdateUserRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        Role role = roleRepository.findById(request.getRoleId())
+                .orElseThrow(() -> new EntityNotFoundException("Role not found"));
+
+        CashierCounter counter = null;
+        if (request.getCashierCounterId() != null) {
+            counter = counterRepository.findById(request.getCashierCounterId())
+                    .orElseThrow(() -> new EntityNotFoundException("Counter not found"));
+        }
+
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+        user.setRole(role);
+        user.setCashierCounter(counter);
+        user.setIsActive(request.getIsActive());
+
+        user = userRepository.save(user);
+        return userMapper.toResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(UUID id) {
+        if (!userRepository.existsById(id)) {
+            throw new EntityNotFoundException("User not found");
+        }
+        userRepository.deleteById(id);
     }
 }

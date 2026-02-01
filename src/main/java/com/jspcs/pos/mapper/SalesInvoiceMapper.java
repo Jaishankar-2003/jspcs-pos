@@ -13,5 +13,6 @@ public interface SalesInvoiceMapper {
     @Mapping(target = "counterName", source = "counter.name")
     InvoiceResponse toResponse(SalesInvoice invoice);
 
+    @Mapping(target = "category", source = "product.category")
     InvoiceItemResponse toItemResponse(InvoiceItem item);
 }

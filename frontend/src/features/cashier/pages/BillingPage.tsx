@@ -9,7 +9,8 @@ import {
     ShoppingCart,
     Search as SearchIcon,
     X,
-    Keyboard
+    Keyboard,
+    Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -17,12 +18,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { cn } from '@/utils/utils';
 import { useCartStore } from '@/store/cartSlice';
 import type { Product } from '@/types';
+import { productsApi } from '@/api/products';
+import { salesApi } from '@/api/sales';
 
 export const BillingPage = () => {
     const { items, addItem, removeItem, updateQuantity, subtotal, clearCart } = useCartStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentMode, setPaymentMode] = useState<'CASH' | 'CARD' | 'UPI'>('CASH');
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loadingProducts, setLoadingProducts] = useState(false);
+    const [checkoutLoading, setCheckoutLoading] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
+
+    // Fetch products for search cache
+    useEffect(() => {
+        const loadProducts = async () => {
+            try {
+                setLoadingProducts(true);
+                const data = await productsApi.getAll();
+                setProducts(data);
+            } catch (error) {
+                console.error("Failed to load products", error);
+            } finally {
+                setLoadingProducts(false);
+            }
+        };
+        loadProducts();
+    }, []);
 
     // Focus search input on mount and on 'F1' key
     useEffect(() => {
@@ -39,19 +61,37 @@ export const BillingPage = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // Mock products for search
-    const mockProducts: Partial<Product>[] = [
-        { id: "1", sku: "PROD-001", name: "Premium Coffee Beans", sellingPrice: 850, currentStock: 45, unitOfMeasure: "kg" },
-        { id: "2", sku: "PROD-002", name: "Organic Green Tea", sellingPrice: 420, currentStock: 12, unitOfMeasure: "box" },
-        { id: "3", sku: "PROD-003", name: "Whole Wheat Bread", sellingPrice: 65, currentStock: 5, unitOfMeasure: "loaf" },
-        { id: "4", sku: "PROD-004", name: "Salted Butter", sellingPrice: 235, currentStock: 28, unitOfMeasure: "unit" },
-        { id: "5", sku: "PROD-005", name: "Dark Chocolate 70%", sellingPrice: 180, currentStock: 65, unitOfMeasure: "bar" },
-    ];
-
     const handleProductSelect = (product: Product) => {
         addItem(product);
         setSearchTerm('');
         searchInputRef.current?.focus();
+    };
+
+    const handleCheckout = async () => {
+        if (items.length === 0) return;
+
+        try {
+            setCheckoutLoading(true);
+            const invoiceRequest = {
+                items: items.map(item => ({
+                    productId: item.id,
+                    quantity: item.quantity,
+                    discountPercent: 0 // Default 0 for now
+                })),
+                paymentMode: paymentMode,
+                // Optional customer details can be added here later
+                customerName: "Walk-in Customer"
+            };
+
+            await salesApi.createInvoice(invoiceRequest);
+            clearCart();
+            alert("Checkout Successful! Invoice Created.");
+        } catch (error) {
+            console.error("Checkout Failed", error);
+            alert("Checkout Failed. Please try again.");
+        } finally {
+            setCheckoutLoading(false);
+        }
     };
 
     const grandTotal = subtotal;
@@ -144,28 +184,40 @@ export const BillingPage = () => {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 ref={searchInputRef}
-                                placeholder="Name or SKU..."
+                                placeholder={loadingProducts ? "Loading products..." : "Name or SKU..."}
                                 className="pl-9 bg-muted/50 focus-visible:ring-primary shadow-inner"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
+                                disabled={loadingProducts}
                             />
+                            {loadingProducts && (
+                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                            )}
                         </div>
 
                         {searchTerm && (
                             <div className="border border-border rounded-lg max-h-[300px] overflow-auto shadow-sm">
-                                {mockProducts.filter(p => p.name?.toLowerCase().includes(searchTerm.toLowerCase())).map(product => (
-                                    <button
-                                        key={product.id}
-                                        onClick={() => handleProductSelect(product)}
-                                        className="w-full flex items-center justify-between p-3 text-left hover:bg-primary/5 transition-colors border-b last:border-0"
-                                    >
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-sm">{product.name}</span>
-                                            <span className="text-xs text-muted-foreground">{product.sku}</span>
-                                        </div>
-                                        <span className="font-bold text-sm">₹{product.sellingPrice}</span>
-                                    </button>
-                                ))}
+                                {products
+                                    .filter(p => p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku?.toLowerCase().includes(searchTerm.toLowerCase()))
+                                    .slice(0, 10) // Limit to 10 results
+                                    .map(product => (
+                                        <button
+                                            key={product.id}
+                                            onClick={() => handleProductSelect(product)}
+                                            className="w-full flex items-center justify-between p-3 text-left hover:bg-primary/5 transition-colors border-b last:border-0"
+                                        >
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-sm">{product.name}</span>
+                                                <span className="text-xs text-muted-foreground">{product.sku}</span>
+                                            </div>
+                                            <div className="flex flex-col items-end">
+                                                <span className="font-bold text-sm">₹{product.sellingPrice}</span>
+                                                <span className={cn("text-[10px]", product.currentStock > 0 ? "text-green-600" : "text-red-500")}>
+                                                    {product.currentStock > 0 ? `${product.currentStock} in stock` : 'Out of Stock'}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    ))}
                             </div>
                         )}
                     </CardContent>
@@ -214,9 +266,11 @@ export const BillingPage = () => {
 
                             <Button
                                 className="w-full h-16 text-lg font-bold shadow-xl shadow-primary/20"
-                                disabled={items.length === 0}
+                                disabled={items.length === 0 || checkoutLoading}
+                                onClick={handleCheckout}
                             >
-                                Confirm Checkout
+                                {checkoutLoading ? <Loader2 className="h-6 w-6 animate-spin mr-2" /> : null}
+                                {checkoutLoading ? 'Processing...' : 'Confirm Checkout'}
                             </Button>
                         </div>
                     </CardContent>

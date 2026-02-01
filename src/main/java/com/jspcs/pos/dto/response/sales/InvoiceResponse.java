@@ -32,6 +32,7 @@ public class InvoiceResponse {
     private BigDecimal roundOff;
     private BigDecimal grandTotal;
 
+    private String paymentMode;
     private String paymentStatus;
     private List<InvoiceItemResponse> items;
 }

@@ -16,6 +16,7 @@ public class InvoiceItemResponse {
     private UUID id;
     private Integer lineNumber;
     private String productName;
+    private String category;
     private String productSku;
     private BigDecimal unitPrice;
     private Integer quantity;

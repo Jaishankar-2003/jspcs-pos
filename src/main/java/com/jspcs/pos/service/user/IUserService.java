@@ -1,6 +1,7 @@
 package com.jspcs.pos.service.user;
 
 import com.jspcs.pos.dto.request.user.CreateUserRequest;
+import com.jspcs.pos.dto.request.user.UpdateUserRequest;
 import com.jspcs.pos.dto.response.user.UserResponse;
 
 import java.util.List;
@@ -15,4 +16,7 @@ public interface IUserService {
 
     List<UserResponse> getAllUsers();
 
+    UserResponse updateUser(UUID id, UpdateUserRequest request);
+
+    void deleteUser(UUID id);
 }

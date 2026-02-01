@@ -173,6 +173,25 @@ public class SalesServiceImpl implements ISalesService {
                 BigDecimal grandTotal = subtotal.subtract(totalDiscount).add(totalCgst).add(totalSgst);
                 invoice.setGrandTotal(grandTotal);
 
+                // Handle Payment if mode provided
+                if (request.getPaymentMode() != null && !request.getPaymentMode().isEmpty()) {
+                        com.jspcs.pos.entity.sales.Payment payment = com.jspcs.pos.entity.sales.Payment.builder()
+                                        .invoice(invoice)
+                                        .paymentMode(request.getPaymentMode())
+                                        .amount(grandTotal)
+                                        .paymentDate(LocalDate.now())
+                                        .paymentTime(LocalTime.now())
+                                        .receivedBy(cashier)
+                                        .notes("Auto-payment at checkout")
+                                        .build();
+
+                        if (invoice.getPayments() == null) {
+                                invoice.setPayments(new ArrayList<>());
+                        }
+                        invoice.getPayments().add(payment);
+                        invoice.setPaymentStatus("PAID");
+                }
+
                 invoice = invoiceRepository.save(invoice);
 
                 return invoiceMapper.toResponse(invoice);
@@ -192,5 +211,13 @@ public class SalesServiceImpl implements ISalesService {
                 SalesInvoice invoice = invoiceRepository.findByInvoiceNumber(invoiceNumber)
                                 .orElseThrow(() -> new EntityNotFoundException("Invoice not found"));
                 return invoiceMapper.toResponse(invoice);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<InvoiceResponse> getAllInvoices() {
+                return invoiceRepository.findAll().stream()
+                                .map(invoiceMapper::toResponse)
+                                .collect(java.util.stream.Collectors.toList());
         }
 }

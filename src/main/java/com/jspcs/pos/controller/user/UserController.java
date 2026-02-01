@@ -1,6 +1,7 @@
 package com.jspcs.pos.controller.user;
 
 import com.jspcs.pos.dto.request.user.CreateUserRequest;
+import com.jspcs.pos.dto.request.user.UpdateUserRequest;
 import com.jspcs.pos.dto.response.user.UserResponse;
 import com.jspcs.pos.service.user.IUserService;
 import jakarta.validation.Valid;
@@ -41,5 +42,19 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponse>> getAllUsers() { // Pagination recommended
         return ResponseEntity.ok(userService.getAllUsers());
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id,
+            @Valid @RequestBody UpdateUserRequest request) {
+        return ResponseEntity.ok(userService.updateUser(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
 }

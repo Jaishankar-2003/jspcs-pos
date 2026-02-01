@@ -18,4 +18,11 @@ export const productsApi = {
         const { data } = await api.post<Product>('/products', product);
         return data;
     },
+    update: async (id: string, product: Partial<Product>): Promise<Product> => {
+        const { data } = await api.put<Product>(`/products/${id}`, product);
+        return data;
+    },
+    delete: async (id: string): Promise<void> => {
+        await api.delete(`/products/${id}`);
+    },
 };

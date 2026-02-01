@@ -2,6 +2,7 @@ package com.jspcs.pos.mapper;
 
 import com.jspcs.pos.dto.response.sales.InvoiceItemResponse;
 import com.jspcs.pos.dto.response.sales.InvoiceResponse;
+import com.jspcs.pos.entity.product.Product;
 import com.jspcs.pos.entity.sales.InvoiceItem;
 import com.jspcs.pos.entity.sales.SalesInvoice;
 import com.jspcs.pos.entity.user.CashierCounter;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-02-01T14:25:02+0530",
+    date = "2026-02-01T19:16:30+0530",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.45.0.v20260128-0750, environment: Java 21.0.9 (Eclipse Adoptium)"
 )
 @Component
@@ -29,20 +30,20 @@ public class SalesInvoiceMapperImpl implements SalesInvoiceMapper {
 
         invoiceResponse.cashierName( invoiceCashierFullName( invoice ) );
         invoiceResponse.counterName( invoiceCounterName( invoice ) );
+        invoiceResponse.id( invoice.getId() );
+        invoiceResponse.invoiceNumber( invoice.getInvoiceNumber() );
+        invoiceResponse.invoiceDate( invoice.getInvoiceDate() );
+        invoiceResponse.invoiceTime( invoice.getInvoiceTime() );
         invoiceResponse.customerName( invoice.getCustomerName() );
         invoiceResponse.customerPhone( invoice.getCustomerPhone() );
-        invoiceResponse.discountAmount( invoice.getDiscountAmount() );
-        invoiceResponse.grandTotal( invoice.getGrandTotal() );
-        invoiceResponse.id( invoice.getId() );
-        invoiceResponse.invoiceDate( invoice.getInvoiceDate() );
-        invoiceResponse.invoiceNumber( invoice.getInvoiceNumber() );
-        invoiceResponse.invoiceTime( invoice.getInvoiceTime() );
-        invoiceResponse.items( invoiceItemListToInvoiceItemResponseList( invoice.getItems() ) );
-        invoiceResponse.paymentStatus( invoice.getPaymentStatus() );
-        invoiceResponse.roundOff( invoice.getRoundOff() );
         invoiceResponse.subtotal( invoice.getSubtotal() );
+        invoiceResponse.discountAmount( invoice.getDiscountAmount() );
         invoiceResponse.taxableAmount( invoice.getTaxableAmount() );
         invoiceResponse.totalTaxAmount( invoice.getTotalTaxAmount() );
+        invoiceResponse.roundOff( invoice.getRoundOff() );
+        invoiceResponse.grandTotal( invoice.getGrandTotal() );
+        invoiceResponse.paymentStatus( invoice.getPaymentStatus() );
+        invoiceResponse.items( invoiceItemListToInvoiceItemResponseList( invoice.getItems() ) );
 
         return invoiceResponse.build();
     }
@@ -55,19 +56,20 @@ public class SalesInvoiceMapperImpl implements SalesInvoiceMapper {
 
         InvoiceItemResponse.InvoiceItemResponseBuilder invoiceItemResponse = InvoiceItemResponse.builder();
 
-        invoiceItemResponse.cgstAmount( item.getCgstAmount() );
-        invoiceItemResponse.discountAmount( item.getDiscountAmount() );
-        invoiceItemResponse.finalAmount( item.getFinalAmount() );
+        invoiceItemResponse.category( itemProductCategory( item ) );
         invoiceItemResponse.id( item.getId() );
-        invoiceItemResponse.igstAmount( item.getIgstAmount() );
         invoiceItemResponse.lineNumber( item.getLineNumber() );
         invoiceItemResponse.productName( item.getProductName() );
         invoiceItemResponse.productSku( item.getProductSku() );
-        invoiceItemResponse.quantity( item.getQuantity() );
-        invoiceItemResponse.sgstAmount( item.getSgstAmount() );
-        invoiceItemResponse.taxableAmount( item.getTaxableAmount() );
-        invoiceItemResponse.totalTaxAmount( item.getTotalTaxAmount() );
         invoiceItemResponse.unitPrice( item.getUnitPrice() );
+        invoiceItemResponse.quantity( item.getQuantity() );
+        invoiceItemResponse.discountAmount( item.getDiscountAmount() );
+        invoiceItemResponse.taxableAmount( item.getTaxableAmount() );
+        invoiceItemResponse.cgstAmount( item.getCgstAmount() );
+        invoiceItemResponse.sgstAmount( item.getSgstAmount() );
+        invoiceItemResponse.igstAmount( item.getIgstAmount() );
+        invoiceItemResponse.totalTaxAmount( item.getTotalTaxAmount() );
+        invoiceItemResponse.finalAmount( item.getFinalAmount() );
 
         return invoiceItemResponse.build();
     }
@@ -113,5 +115,20 @@ public class SalesInvoiceMapperImpl implements SalesInvoiceMapper {
         }
 
         return list1;
+    }
+
+    private String itemProductCategory(InvoiceItem invoiceItem) {
+        if ( invoiceItem == null ) {
+            return null;
+        }
+        Product product = invoiceItem.getProduct();
+        if ( product == null ) {
+            return null;
+        }
+        String category = product.getCategory();
+        if ( category == null ) {
+            return null;
+        }
+        return category;
     }
 }

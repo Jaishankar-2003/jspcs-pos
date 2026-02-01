@@ -13,6 +13,6 @@ public interface ISalesService {
     InvoiceResponse getInvoice(UUID id);
 
     InvoiceResponse getInvoiceByNumber(String invoiceNumber);
-    // Page<InvoiceResponse> listInvoices(Pageable pageable); // Skipping Page for
-    // brevity, can add later
+
+    java.util.List<InvoiceResponse> getAllInvoices();
 }

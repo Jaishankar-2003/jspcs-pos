@@ -23,5 +23,7 @@ public class CreateInvoiceRequest {
     @NotEmpty(message = "Invoice must have at least one item")
     private List<InvoiceItemRequest> items;
 
+    private String paymentMode; // CASH, CARD, UPI
+
     private String notes;
 }

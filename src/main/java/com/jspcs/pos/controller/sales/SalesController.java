@@ -32,16 +32,22 @@ public class SalesController {
     private final WebSocketService webSocketService;
     private final PdfService pdfService;
 
+    @GetMapping("/invoices")
+    @PreAuthorize("hasRole('CASHIER') or hasRole('ADMIN')")
+    public ResponseEntity<java.util.List<InvoiceResponse>> getAllInvoices() {
+        return ResponseEntity.ok(salesService.getAllInvoices());
+    }
+
     @PostMapping("/invoices")
     @PreAuthorize("hasRole('CASHIER') or hasRole('ADMIN')")
     public ResponseEntity<InvoiceResponse> createInvoice(@Valid @RequestBody CreateInvoiceRequest request) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         InvoiceResponse response = salesService.createInvoiceByUsername(request, username);
-        
+
         // Broadcast real-time update
         webSocketService.broadcastSalesUpdate(response);
         webSocketService.broadcastInvoiceCreated(response);
-        
+
         log.info("Invoice created and broadcasted: {}", response.getInvoiceNumber());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -61,25 +67,25 @@ public class SalesController {
     public ResponseEntity<ByteArrayResource> generateInvoicePdf(@PathVariable UUID id) {
         try {
             InvoiceResponse invoice = salesService.getInvoice(id);
-            
+
             Map<String, Object> pdfData = new HashMap<>();
             pdfData.put("invoice", invoice);
             pdfData.put("items", invoice.getItems());
-            
+
             byte[] pdfBytes = pdfService.generateInvoicePdf(pdfData);
-            
+
             ByteArrayResource resource = new ByteArrayResource(pdfBytes);
-            
+
             HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, 
-                "attachment; filename=invoice_" + invoice.getInvoiceNumber() + ".pdf");
+            headers.add(HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=invoice_" + invoice.getInvoiceNumber() + ".pdf");
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE);
-            
+
             return ResponseEntity.ok()
-                .headers(headers)
-                .contentLength(pdfBytes.length)
-                .body(resource);
-                
+                    .headers(headers)
+                    .contentLength(pdfBytes.length)
+                    .body(resource);
+
         } catch (Exception e) {
             log.error("Error generating PDF for invoice: {}", id, e);
             return ResponseEntity.internalServerError().build();

@@ -1,6 +1,7 @@
 package com.jspcs.pos.controller.product;
 
 import com.jspcs.pos.dto.request.product.CreateProductRequest;
+import com.jspcs.pos.dto.request.product.UpdateProductRequest;
 import com.jspcs.pos.dto.response.product.ProductResponse;
 import com.jspcs.pos.service.product.IProductService;
 import jakarta.validation.Valid;
@@ -42,5 +43,19 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('CASHIER')")
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ProductResponse> updateProduct(@PathVariable UUID id,
+            @Valid @RequestBody UpdateProductRequest request) {
+        return ResponseEntity.ok(productService.updateProduct(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteProduct(@PathVariable UUID id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -38,12 +38,14 @@ export interface CartItem extends Product {
 
 export interface InvoiceSubItem {
     productId: string;
-    productName: string; // Add name for display
+    productName: string;
+    category?: string; // Added category
     quantity: number;
     unitPrice: number;
-    discount: number;
-    tax: number;
-    total: number;
+    discount?: number;
+    tax?: number;
+    finalAmount: number; // matched backend
+    total: number; // legacy or computed
 }
 
 export interface CreateInvoiceRequest {
@@ -52,16 +54,28 @@ export interface CreateInvoiceRequest {
     customerPhone?: string;
     customerEmail?: string;
     customerGstin?: string;
-    items: InvoiceSubItem[];
+    items: {
+        productId: string;
+        quantity: number;
+        discountPercent?: number;
+        unitPrice?: number;
+    }[];
+    paymentMode?: string; // Added
     notes?: string;
 }
 
 export interface InvoiceResponse {
     id: string;
     invoiceNumber: string;
+    invoiceDate: string; // date
+    invoiceTime: string; // time
     customerName: string;
-    totalAmount: number;
-    status: string;
-    createdAt: string;
+    paymentMode: string; // Added
+    subtotal: number;
+    totalTaxAmount: number;
+    discountAmount: number;
+    grandTotal: number;
+    status: string; // paymentStatus
     items: InvoiceSubItem[];
+    cashierName?: string;
 }

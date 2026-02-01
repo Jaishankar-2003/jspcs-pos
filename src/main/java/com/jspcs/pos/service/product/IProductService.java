@@ -1,6 +1,7 @@
 package com.jspcs.pos.service.product;
 
 import com.jspcs.pos.dto.request.product.CreateProductRequest;
+import com.jspcs.pos.dto.request.product.UpdateProductRequest;
 import com.jspcs.pos.dto.response.product.ProductResponse;
 
 import java.util.List;
@@ -14,4 +15,8 @@ public interface IProductService {
     ProductResponse getProductBySku(String sku);
 
     List<ProductResponse> getAllProducts();
+
+    ProductResponse updateProduct(UUID id, UpdateProductRequest request);
+
+    void deleteProduct(UUID id);
 }
