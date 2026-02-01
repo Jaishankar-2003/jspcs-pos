@@ -38,7 +38,8 @@ export const ProductsPage = () => {
         category: '',
         price: '',
         stock: '',
-        unit: ''
+        unit: '',
+        gstRate: '18'
     });
 
     const fetchProducts = async () => {
@@ -64,11 +65,12 @@ export const ProductsPage = () => {
                 name: formData.name,
                 category: formData.category,
                 sellingPrice: parseFloat(formData.price),
+                gstRate: parseFloat(formData.gstRate),
                 currentStock: parseInt(formData.stock),
                 unitOfMeasure: formData.unit || 'unit'
             });
             setIsAddModalOpen(false);
-            setFormData({ sku: '', name: '', category: '', price: '', stock: '', unit: '' });
+            setFormData({ sku: '', name: '', category: '', price: '', stock: '', unit: '', gstRate: '18' });
             fetchProducts(); // Refresh list
         } catch (error) {
             console.error('Failed to create product', error);
@@ -106,7 +108,7 @@ export const ProductsPage = () => {
                         Export CSV
                     </Button>
                     <Button onClick={() => {
-                        setFormData({ sku: '', name: '', category: '', price: '', stock: '', unit: '' });
+                        setFormData({ sku: '', name: '', category: '', price: '', stock: '', unit: '', gstRate: '18' });
                         setIsAddModalOpen(true);
                     }}>
                         <Plus className="mr-2 h-4 w-4" />
@@ -184,7 +186,8 @@ export const ProductsPage = () => {
                                                             category: product.category || '',
                                                             price: product.sellingPrice?.toString() || '',
                                                             stock: product.currentStock?.toString() || '',
-                                                            unit: product.unitOfMeasure || ''
+                                                            unit: product.unitOfMeasure || '',
+                                                            gstRate: product.gstRate?.toString() || '18'
                                                         });
                                                         // Note: We need a selectedProductId state to distinguish between Add and Edit
                                                         // But for now let's just implement delete to satisfy basic requirements.

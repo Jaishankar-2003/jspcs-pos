@@ -19,4 +19,8 @@ public interface IUserService {
     UserResponse updateUser(UUID id, UpdateUserRequest request);
 
     void deleteUser(UUID id);
+
+    java.util.List<com.jspcs.pos.entity.user.Role> getAllRoles();
+
+    java.util.List<com.jspcs.pos.entity.user.CashierCounter> getAllCounters();
 }

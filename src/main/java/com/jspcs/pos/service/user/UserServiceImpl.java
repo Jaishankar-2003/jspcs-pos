@@ -114,4 +114,14 @@ public class UserServiceImpl implements IUserService {
         }
         userRepository.deleteById(id);
     }
+
+    @Override
+    public List<Role> getAllRoles() {
+        return roleRepository.findAll();
+    }
+
+    @Override
+    public List<CashierCounter> getAllCounters() {
+        return counterRepository.findAll();
+    }
 }

@@ -17,9 +17,11 @@
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/dto/request/auth/LoginRequest.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/dto/request/inventory/StockAdjustmentRequest.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/dto/request/product/CreateProductRequest.java
+/home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/dto/request/product/UpdateProductRequest.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/dto/request/sales/CreateInvoiceRequest.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/dto/request/sales/InvoiceItemRequest.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/dto/request/user/CreateUserRequest.java
+/home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/dto/request/user/UpdateUserRequest.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/dto/response/auth/LoginResponse.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/dto/response/common/ErrorResponse.java
 /home/sri-jaya-shankaran/jspcs-pos/src/main/java/com/jspcs/pos/dto/response/inventory/InventoryResponse.java

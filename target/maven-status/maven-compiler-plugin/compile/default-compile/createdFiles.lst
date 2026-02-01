@@ -38,6 +38,7 @@ com/jspcs/pos/entity/sales/GstTaxDetail.class
 com/jspcs/pos/entity/base/VersionedEntity$VersionedEntityBuilder.class
 com/jspcs/pos/entity/sales/SalesInvoice.class
 com/jspcs/pos/config/WebConfig.class
+com/jspcs/pos/dto/request/product/UpdateProductRequest.class
 com/jspcs/pos/dto/request/user/CreateUserRequest$CreateUserRequestBuilder.class
 com/jspcs/pos/dto/PaginationResponse.class
 com/jspcs/pos/repository/ManualEntryLogRepository.class
@@ -57,6 +58,7 @@ com/jspcs/pos/repository/RefundRepository.class
 com/jspcs/pos/service/product/ProductServiceImpl.class
 com/jspcs/pos/controller/sales/SalesController.class
 com/jspcs/pos/repository/GstTaxDetailRepository.class
+com/jspcs/pos/dto/request/user/UpdateUserRequest$UpdateUserRequestBuilder.class
 com/jspcs/pos/repository/ProductRepository.class
 com/jspcs/pos/mapper/ProductMapper.class
 com/jspcs/pos/entity/system/License$LicenseBuilderImpl.class
@@ -72,6 +74,7 @@ com/jspcs/pos/entity/base/SoftDeletableEntity$SoftDeletableEntityBuilder.class
 com/jspcs/pos/entity/sales/GstTaxDetail$GstTaxDetailBuilder.class
 com/jspcs/pos/controller/inventory/StockAlertController.class
 com/jspcs/pos/entity/system/ManualEntryLog$ManualEntryLogBuilderImpl.class
+com/jspcs/pos/dto/request/user/UpdateUserRequest.class
 com/jspcs/pos/dto/request/sales/InvoiceItemRequest$InvoiceItemRequestBuilder.class
 com/jspcs/pos/dto/request/product/CreateProductRequest$CreateProductRequestBuilder.class
 com/jspcs/pos/repository/LicenseRepository.class
@@ -129,6 +132,7 @@ com/jspcs/pos/service/inventory/InventoryServiceImpl.class
 com/jspcs/pos/entity/product/Product$ProductBuilderImpl.class
 com/jspcs/pos/entity/base/VersionedEntity.class
 com/jspcs/pos/service/report/ReportService.class
+com/jspcs/pos/dto/request/product/UpdateProductRequest$UpdateProductRequestBuilder.class
 com/jspcs/pos/entity/user/User$UserBuilder.class
 com/jspcs/pos/service/StockAlertService.class
 com/jspcs/pos/dto/response/auth/LoginResponse$LoginResponseBuilder.class

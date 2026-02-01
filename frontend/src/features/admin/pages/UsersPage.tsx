@@ -24,14 +24,17 @@ export const UsersPage = () => {
     const [isAddUserOpen, setIsAddUserOpen] = useState(false);
     const [users, setUsers] = useState<UserResponse[]>([]);
     const [loading, setLoading] = useState(true);
+    const [roles, setRoles] = useState<any[]>([]);
+    const [counters, setCounters] = useState<any[]>([]);
 
     // Form State
-    const [formData, setFormData] = useState<CreateUserRequest>({
+    const [formData, setFormData] = useState<any>({
         username: '',
         fullName: '',
-        role: 'CASHIER',
+        roleId: '',
+        cashierCounterId: '',
         email: '',
-        password: '' // Required for new user
+        password: ''
     });
 
     const fetchUsers = async () => {
@@ -48,6 +51,19 @@ export const UsersPage = () => {
 
     useEffect(() => {
         fetchUsers();
+        const fetchMetadata = async () => {
+            try {
+                const [rolesData, countersData] = await Promise.all([
+                    usersApi.getRoles(),
+                    usersApi.getCounters()
+                ]);
+                setRoles(rolesData);
+                setCounters(countersData);
+            } catch (error) {
+                console.error("Failed to fetch metadata", error);
+            }
+        };
+        fetchMetadata();
     }, []);
 
     const handleCreateUser = async () => {
@@ -57,7 +73,8 @@ export const UsersPage = () => {
             setFormData({
                 username: '',
                 fullName: '',
-                role: 'CASHIER',
+                roleId: '',
+                cashierCounterId: '',
                 email: '',
                 password: ''
             });
@@ -221,22 +238,37 @@ export const UsersPage = () => {
                             <label className="text-sm font-medium">Role</label>
                             <select
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                value={formData.role}
-                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                value={formData.roleId}
+                                onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
                             >
-                                <option value="CASHIER">Cashier</option>
-                                <option value="ADMIN">Admin</option>
+                                <option value="">Select Role</option>
+                                {roles.map(r => (
+                                    <option key={r.id} value={r.id}>{r.name}</option>
+                                ))}
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Initial Password</label>
-                            <Input
-                                type="password"
-                                placeholder="••••••••"
-                                value={formData.password || ''}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            />
+                            <label className="text-sm font-medium">Cashier Counter (Optional)</label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                value={formData.cashierCounterId}
+                                onChange={(e) => setFormData({ ...formData, cashierCounterId: e.target.value })}
+                            >
+                                <option value="">None / Backoffice</option>
+                                {counters.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
                         </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Initial Password</label>
+                        <Input
+                            type="password"
+                            placeholder="••••••••"
+                            value={formData.password || ''}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        />
                     </div>
                     <div className="flex justify-end gap-3 pt-4">
                         <Button variant="outline" onClick={() => setIsAddUserOpen(false)}>Cancel</Button>

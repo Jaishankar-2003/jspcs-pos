@@ -19,6 +19,7 @@ import { cn } from '@/utils/utils';
 import { useCartStore } from '@/store/cartSlice';
 import type { Product } from '@/types';
 import { productsApi } from '@/api/products';
+import { usersApi } from '@/api/users';
 import { salesApi } from '@/api/sales';
 
 export const BillingPage = () => {
@@ -72,6 +73,15 @@ export const BillingPage = () => {
 
         try {
             setCheckoutLoading(true);
+
+            // Fetch current user to check counter
+            const currentUser = await usersApi.getMe();
+            if (!currentUser.cashierCounterName) {
+                alert("Checkout Failed: You are not assigned to a cashier counter. Please contact admin.");
+                setCheckoutLoading(false);
+                return;
+            }
+
             const invoiceRequest = {
                 items: items.map(item => ({
                     productId: item.id,

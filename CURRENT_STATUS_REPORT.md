@@ -311,7 +311,7 @@ npm run dev
 docker ps | grep jspcs-pos-db
 ```
 
----
+---cd frount
 
 ## 📚 Key Configuration Files
 

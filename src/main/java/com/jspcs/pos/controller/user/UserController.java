@@ -57,4 +57,14 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/roles")
+    public ResponseEntity<List<com.jspcs.pos.entity.user.Role>> getAllRoles() {
+        return ResponseEntity.ok(userService.getAllRoles());
+    }
+
+    @GetMapping("/counters")
+    public ResponseEntity<List<com.jspcs.pos.entity.user.CashierCounter>> getAllCounters() {
+        return ResponseEntity.ok(userService.getAllCounters());
+    }
 }

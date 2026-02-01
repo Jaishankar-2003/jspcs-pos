@@ -43,4 +43,19 @@ export const usersApi = {
     delete: async (id: string): Promise<void> => {
         await api.delete(`/users/${id}`);
     },
+
+    getRoles: async (): Promise<any[]> => {
+        const response = await api.get('/users/roles');
+        return response.data;
+    },
+
+    getCounters: async (): Promise<any[]> => {
+        const response = await api.get('/users/counters');
+        return response.data;
+    },
+
+    getMe: async (): Promise<any> => {
+        const response = await api.get('/users/me');
+        return response.data;
+    }
 };
