@@ -8,7 +8,6 @@ import com.jspcs.pos.repository.RefundRepository;
 import com.jspcs.pos.repository.SalesInvoiceRepository;
 import com.jspcs.pos.repository.ProductRepository;
 import com.jspcs.pos.repository.UserRepository;
-import com.jspcs.pos.service.WebSocketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

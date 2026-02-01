@@ -11,7 +11,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -26,16 +25,15 @@ public class RefundController {
     @PreAuthorize("hasRole('CASHIER') or hasRole('ADMIN')")
     public ResponseEntity<Refund> createRefund(@Valid @RequestBody CreateRefundRequest request) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        
+
         Refund refund = refundService.createRefund(
-            request.getOriginalInvoiceId(),
-            request.getProductId(),
-            request.getQuantity(),
-            request.getRefundReason(),
-            request.getRefundType(),
-            username
-        );
-        
+                request.getOriginalInvoiceId(),
+                request.getProductId(),
+                request.getQuantity(),
+                request.getRefundReason(),
+                request.getRefundType(),
+                username);
+
         return ResponseEntity.ok(refund);
     }
 
@@ -44,10 +42,10 @@ public class RefundController {
     public ResponseEntity<Refund> approveRefund(
             @PathVariable UUID refundId,
             @RequestBody ApproveRefundRequest request) {
-        
+
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Refund refund = refundService.approveRefund(refundId, username, request.getNotes());
-        
+
         return ResponseEntity.ok(refund);
     }
 
@@ -56,10 +54,10 @@ public class RefundController {
     public ResponseEntity<Refund> rejectRefund(
             @PathVariable UUID refundId,
             @RequestBody RejectRefundRequest request) {
-        
+
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Refund refund = refundService.rejectRefund(refundId, username, request.getReason());
-        
+
         return ResponseEntity.ok(refund);
     }
 
@@ -93,33 +91,68 @@ public class RefundController {
         private Refund.RefundType refundType;
 
         // Getters and setters
-        public UUID getOriginalInvoiceId() { return originalInvoiceId; }
-        public void setOriginalInvoiceId(UUID originalInvoiceId) { this.originalInvoiceId = originalInvoiceId; }
-        
-        public UUID getProductId() { return productId; }
-        public void setProductId(UUID productId) { this.productId = productId; }
-        
-        public Integer getQuantity() { return quantity; }
-        public void setQuantity(Integer quantity) { this.quantity = quantity; }
-        
-        public String getRefundReason() { return refundReason; }
-        public void setRefundReason(String refundReason) { this.refundReason = refundReason; }
-        
-        public Refund.RefundType getRefundType() { return refundType; }
-        public void setRefundType(Refund.RefundType refundType) { this.refundType = refundType; }
+        public UUID getOriginalInvoiceId() {
+            return originalInvoiceId;
+        }
+
+        public void setOriginalInvoiceId(UUID originalInvoiceId) {
+            this.originalInvoiceId = originalInvoiceId;
+        }
+
+        public UUID getProductId() {
+            return productId;
+        }
+
+        public void setProductId(UUID productId) {
+            this.productId = productId;
+        }
+
+        public Integer getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(Integer quantity) {
+            this.quantity = quantity;
+        }
+
+        public String getRefundReason() {
+            return refundReason;
+        }
+
+        public void setRefundReason(String refundReason) {
+            this.refundReason = refundReason;
+        }
+
+        public Refund.RefundType getRefundType() {
+            return refundType;
+        }
+
+        public void setRefundType(Refund.RefundType refundType) {
+            this.refundType = refundType;
+        }
     }
 
     public static class ApproveRefundRequest {
         private String notes;
-        
-        public String getNotes() { return notes; }
-        public void setNotes(String notes) { this.notes = notes; }
+
+        public String getNotes() {
+            return notes;
+        }
+
+        public void setNotes(String notes) {
+            this.notes = notes;
+        }
     }
 
     public static class RejectRefundRequest {
         private String reason;
-        
-        public String getReason() { return reason; }
-        public void setReason(String reason) { this.reason = reason; }
+
+        public String getReason() {
+            return reason;
+        }
+
+        public void setReason(String reason) {
+            this.reason = reason;
+        }
     }
 }
