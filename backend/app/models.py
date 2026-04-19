@@ -14,6 +14,9 @@ class User(Base):
     username = Column(String(50), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     role = Column(String(20), nullable=False) # 'ADMIN' or 'CASHIER'
+    full_name = Column(String(100))
+    email = Column(String(100))
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Product(Base):

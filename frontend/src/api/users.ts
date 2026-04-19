@@ -10,6 +10,7 @@ export interface UserResponse {
     email?: string;
     createdAt: string;
     isActive: boolean;
+    isOnline: boolean;
 }
 
 export interface CreateUserRequest {

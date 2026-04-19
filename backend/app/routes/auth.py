@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
+from app.session_store import sessions
 from passlib.context import CryptContext
 import secrets
+from datetime import datetime, timedelta
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# Simple in-memory session store: {token: user_id}
-sessions = {}
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 def get_password_hash(password):
     return pwd_context.hash(password)
@@ -25,29 +26,30 @@ def login(request: schemas.LoginRequest, db: Session = Depends(get_db)):
     
     token = secrets.token_hex(32)
     sessions[token] = user.id
-    return {"access_token": token, "token_type": "bearer", "role": user.role}
-
-@router.post("/admin/create-user", response_model=schemas.UserResponse)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.username == user.username).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
     
-    new_user = models.User(
-        username=user.username,
-        password_hash=get_password_hash(user.password),
-        role=user.role
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+    return {
+        "token": token,
+        "type": "bearer",
+        "username": user.username,
+        "role": user.role,
+        "permissions": ["ADMIN"] if user.role == "ADMIN" else ["CASHIER"],
+        "expiresAt": (datetime.now() + timedelta(hours=24)).isoformat()
+    }
+
+@router.post("/logout")
+def logout(token: str = Depends(oauth2_scheme)):
+    if token in sessions:
+        del sessions[token]
+    return {"message": "Logged out successfully"}
 
 # Dependency to get current user
-def get_current_user(x_token: str = Header(...), db: Session = Depends(get_db)):
-    user_id = sessions.get(x_token)
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    user_id = sessions.get(token)
     if not user_id:
+        print(f"DEBUG: Session check failed for token: {token[:8]}...")
+        print(f"DEBUG: Current active sessions: {list(sessions.keys())}")
         raise HTTPException(status_code=401, detail="Invalid or expired session")
+    
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=401, detail="User not found")

@@ -2,13 +2,19 @@ import { CircleUser, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authSlice';
 import { useNavigate } from 'react-router-dom';
+import { authApi } from '@/api/auth';
 import toast from 'react-hot-toast';
 
 export const Header = () => {
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        try {
+            await authApi.logout();
+        } catch (error) {
+            console.error('Failed to logout from server', error);
+        }
         logout();
         toast.success('Logged out successfully');
         navigate('/login');

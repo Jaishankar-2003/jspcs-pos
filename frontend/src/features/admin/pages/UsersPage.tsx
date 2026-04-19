@@ -21,7 +21,8 @@ import type { CreateUserRequest, UserResponse } from '@/api/users';
 
 export const UsersPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
     const [users, setUsers] = useState<UserResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [roles, setRoles] = useState<any[]>([]);
@@ -66,23 +67,58 @@ export const UsersPage = () => {
         fetchMetadata();
     }, []);
 
-    const handleCreateUser = async () => {
+    const handleOpenAdd = () => {
+        setEditingUser(null);
+        setFormData({
+            username: '',
+            fullName: '',
+            roleId: '',
+            cashierCounterId: '',
+            email: '',
+            password: ''
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEdit = (user: UserResponse) => {
+        setEditingUser(user);
+        setFormData({
+            username: user.username,
+            fullName: user.fullName || '',
+            roleId: user.role,
+            cashierCounterId: '',
+            email: user.email || '',
+            password: ''
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleSaveUser = async () => {
         try {
-            await usersApi.create(formData);
-            setIsAddUserOpen(false);
-            setFormData({
-                username: '',
-                fullName: '',
-                roleId: '',
-                cashierCounterId: '',
-                email: '',
-                password: ''
-            });
+            if (editingUser) {
+                await usersApi.update(editingUser.id, formData);
+                alert("User updated successfully!");
+            } else {
+                await usersApi.create(formData);
+                alert("User created successfully!");
+            }
+            setIsModalOpen(false);
             fetchUsers();
-            alert("User created successfully!");
         } catch (error) {
-            console.error("Failed to create user", error);
-            alert("Failed to create user. Please check console/logs.");
+            console.error("Failed to save user", error);
+            alert("Failed to save user. Please check console/logs.");
+        }
+    };
+
+    const handleDeleteUser = async (id: string) => {
+        if (window.confirm('Are you sure you want to delete this user?')) {
+            try {
+                await usersApi.delete(id);
+                fetchUsers();
+            } catch (error) {
+                console.error("Failed to delete user", error);
+                alert("Failed to delete user.");
+            }
         }
     };
 
@@ -98,7 +134,7 @@ export const UsersPage = () => {
                     <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
                     <p className="text-muted-foreground">Manage system users, roles, and access permissions.</p>
                 </div>
-                <Button onClick={() => setIsAddUserOpen(true)}>
+                <Button onClick={handleOpenAdd}>
                     <UserPlus className="mr-2 h-4 w-4" />
                     Add New User
                 </Button>
@@ -159,10 +195,10 @@ export const UsersPage = () => {
                                         <TableCell>
                                             <span className={cn(
                                                 "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border",
-                                                user.isActive ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                                                user.isOnline ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-slate-500/10 text-slate-500 border-slate-500/20"
                                             )}>
-                                                {user.isActive ? <UserCheck className="mr-1 h-3 w-3" /> : <UserX className="mr-1 h-3 w-3" />}
-                                                {user.isActive ? 'Active' : 'Inactive'}
+                                                {user.isOnline ? <UserCheck className="mr-1 h-3 w-3" /> : <UserX className="mr-1 h-3 w-3" />}
+                                                {user.isOnline ? 'Active' : 'Logout'}
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-sm text-muted-foreground">
@@ -170,20 +206,10 @@ export const UsersPage = () => {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => alert('Edit feature coming in full deployment.')}>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleOpenEdit(user)}>
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-rose-500" onClick={async () => {
-                                                    if (window.confirm('Are you sure you want to delete this user?')) {
-                                                        try {
-                                                            await usersApi.delete(user.id);
-                                                            fetchUsers();
-                                                        } catch (error) {
-                                                            console.error("Failed to delete user", error);
-                                                            alert("Failed to delete user.");
-                                                        }
-                                                    }
-                                                }}>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-rose-500" onClick={() => handleDeleteUser(user.id)}>
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>
@@ -197,10 +223,10 @@ export const UsersPage = () => {
             </Card>
 
             <Modal
-                isOpen={isAddUserOpen}
-                onClose={() => setIsAddUserOpen(false)}
-                title="Add New User"
-                description="Create a new system account with specific roles."
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={editingUser ? "Edit User" : "Add New User"}
+                description={editingUser ? "Update account details." : "Create a new system account."}
             >
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -262,7 +288,9 @@ export const UsersPage = () => {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Initial Password</label>
+                        <label className="text-sm font-medium">
+                            {editingUser ? "New Password (leave blank to keep current)" : "Initial Password"}
+                        </label>
                         <Input
                             type="password"
                             placeholder="••••••••"
@@ -271,8 +299,8 @@ export const UsersPage = () => {
                         />
                     </div>
                     <div className="flex justify-end gap-3 pt-4">
-                        <Button variant="outline" onClick={() => setIsAddUserOpen(false)}>Cancel</Button>
-                        <Button onClick={handleCreateUser}>Create Account</Button>
+                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveUser}>{editingUser ? "Update Account" : "Create Account"}</Button>
                     </div>
                 </div>
             </Modal>
