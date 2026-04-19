@@ -1,0 +1,52 @@
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import os
+
+def generate_invoice_pdf(sale, items):
+    filename = f"invoices/invoice_{sale.id}.pdf"
+    os.makedirs("invoices", exist_ok=True)
+    
+    c = canvas.Canvas(filename, pagesize=letter)
+    width, height = letter
+    
+    # Header
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 50, "JSPCS POS - INVOICE")
+    
+    c.setFont("Helvetica", 10)
+    c.drawString(50, height - 70, f"Invoice ID: {sale.id}")
+    c.drawString(50, height - 85, f"Date: {sale.created_at.strftime('%Y-%m-%d %H:%M')}")
+    c.drawString(50, height - 100, f"Cashier: {sale.cashier_id}")
+    
+    # Table Header
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(50, height - 130, "Product")
+    c.drawString(300, height - 130, "Qty")
+    c.drawString(350, height - 130, "Price")
+    c.drawString(450, height - 130, "Subtotal")
+    
+    c.line(50, height - 135, 550, height - 135)
+    
+    # Items
+    y = height - 150
+    c.setFont("Helvetica", 10)
+    for item in items:
+        product_name = getattr(item, 'product_name', 'Product')
+        c.drawString(50, y, product_name[:40])
+        c.drawString(300, y, str(item.quantity))
+        c.drawString(350, y, f"{item.unit_price:.2f}")
+        c.drawString(450, y, f"{item.subtotal:.2f}")
+        y -= 15
+        if y < 50:
+            c.showPage()
+            y = height - 50
+            
+    # Footer
+    c.line(50, y, 550, y)
+    y -= 20
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(350, y, "Total Amount:")
+    c.drawString(450, y, f"{sale.total_amount:.2f}")
+    
+    c.save()
+    return filename

@@ -1,0 +1,61 @@
+import uuid
+from sqlalchemy import Column, String, Integer, Boolean, Numeric, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+from app.database import Base
+
+def generate_uuid():
+    return str(uuid.uuid4())
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(20), nullable=False) # 'ADMIN' or 'CASHIER'
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    sku = Column(String(50), unique=True, index=True, nullable=False)
+    name = Column(String(200), nullable=False)
+    price = Column(Numeric(10, 2), nullable=False)
+    low_stock_threshold = Column(Integer, default=10)
+    is_active = Column(Boolean, default=True)
+
+    stock = relationship("Stock", back_populates="product", uselist=False, cascade="all, delete-orphan")
+
+class Stock(Base):
+    __tablename__ = "stock"
+
+    product_id = Column(String, ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
+    quantity = Column(Integer, nullable=False, default=0)
+
+    product = relationship("Product", back_populates="stock")
+
+class Sale(Base):
+    __tablename__ = "sales"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    cashier_id = Column(String, ForeignKey("users.id"))
+    total_amount = Column(Numeric(10, 2), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    items = relationship("SaleItem", back_populates="sale", cascade="all, delete-orphan")
+    cashier = relationship("User")
+
+class SaleItem(Base):
+    __tablename__ = "sale_items"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    sale_id = Column(String, ForeignKey("sales.id", ondelete="CASCADE"))
+    product_id = Column(String, ForeignKey("products.id"))
+    quantity = Column(Integer, nullable=False)
+    unit_price = Column(Numeric(10, 2), nullable=False)
+    subtotal = Column(Numeric(10, 2), nullable=False)
+
+    sale = relationship("Sale", back_populates="items")
+    product = relationship("Product")

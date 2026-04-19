@@ -1,37 +1,35 @@
 version: '3.8'
 
 services:
-  app:
-    build: .
-    container_name: jspcs-pos-app
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/jspcs_pos
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=password
-    depends_on:
-      - db
-    networks:
-      - pos-network
-
   db:
     image: postgres:15-alpine
-    container_name: jspcs-pos-db
+    container_name: jspcs_db
     environment:
-      - POSTGRES_DB=jspcs_pos
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
+      POSTGRES_USER: jspcs
+      POSTGRES_PASSWORD: jspcs_password
+      POSTGRES_DB: jspcs_pos
     ports:
-      - "5433:5432"
+      - "5435:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - pos-network
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
 
-networks:
-  pos-network:
-    driver: bridge
+  backend:
+    build:
+      context: ./backend
+    container_name: jspcs_backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://jspcs:jspcs_password@db:5432/jspcs_pos
+    volumes:
+      - ./backend:/app
+      - invoice_data:/app/invoices
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
+  pgdata:
+  invoice_data:

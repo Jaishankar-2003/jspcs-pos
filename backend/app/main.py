@@ -1,0 +1,31 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.database import engine, Base
+from app.routes import auth, products, sales
+import os
+
+# Create tables (we are using schema.sql in docker, but this ensures they exist if run locally with sqlite)
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="JSPCS POS API", description="Simplified POS Backend", version="1.0.0")
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Ensure invoices directory exists
+os.makedirs("invoices", exist_ok=True)
+
+# Include routers
+app.include_router(auth.router, prefix="/api", tags=["Authentication"])
+app.include_router(products.router, prefix="/api", tags=["Products & Stock"])
+app.include_router(sales.router, prefix="/api", tags=["Sales & Billing"])
+
+@app.get("/")
+def root():
+    return {"message": "Welcome to the simplified JSPCS POS API"}
