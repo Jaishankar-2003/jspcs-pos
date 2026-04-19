@@ -42,9 +42,9 @@ export const ProductsPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [masterCategories, setMasterCategories] = useState<{id: string, name: string}[]>([]);
-    const [masterSubCategories, setMasterSubCategories] = useState<{id: string, name: string, categoryId: string}[]>([]);
-    const [masterUnits, setMasterUnits] = useState<{id: string, name: string}[]>([]);
+    const [masterCategories, setMasterCategories] = useState<{ id: string, name: string }[]>([]);
+    const [masterSubCategories, setMasterSubCategories] = useState<{ id: string, name: string, categoryId: string }[]>([]);
+    const [masterUnits, setMasterUnits] = useState<{ id: string, name: string }[]>([]);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -150,7 +150,7 @@ export const ProductsPage = () => {
             setImporting(true);
             const formData = new FormData();
             formData.append('file', importFile);
-            
+
             const response = await fetch('/api/products/bulk', {
                 method: 'POST',
                 headers: {
@@ -158,7 +158,7 @@ export const ProductsPage = () => {
                 },
                 body: formData
             });
-            
+
             const result = await response.json();
             if (response.ok) {
                 toast.success(result.message);
@@ -193,7 +193,7 @@ export const ProductsPage = () => {
 
     const filteredProducts = products.filter(p => {
         const matchesSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+            p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
@@ -246,7 +246,7 @@ export const ProductsPage = () => {
                         <div className="flex items-center gap-4 w-full max-w-2xl">
                             <div className="flex items-center gap-2 flex-1 max-w-xs">
                                 <Filter className="h-4 w-4 text-muted-foreground" />
-                                <select 
+                                <select
                                     className="w-full p-2 bg-background border border-input rounded-md text-sm focus:ring-1 focus:ring-primary outline-none cursor-pointer"
                                     value={selectedCategory}
                                     onChange={(e) => setSelectedCategory(e.target.value)}
@@ -295,10 +295,10 @@ export const ProductsPage = () => {
                                             <TableCell className="text-muted-foreground font-medium">
                                                 {startIndex + index + 1}
                                             </TableCell>
-                                            <TableCell className="font-mono text-xs">{product.sku}</TableCell>
+                                            <TableCell className="font-mono text-base">{product.sku}</TableCell>
                                             <TableCell className="font-medium">{product.name}</TableCell>
                                             <TableCell>
-                                                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-secondary text-secondary-foreground border border-border">
+                                                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-base font-medium bg-secondary text-secondary-foreground border border-border">
                                                     {product.category || 'Uncategorized'}
                                                 </span>
                                             </TableCell>
@@ -310,7 +310,7 @@ export const ProductsPage = () => {
                                                     {product.currentStock}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className="text-right text-muted-foreground text-xs">
+                                            <TableCell className="text-right text-muted-foreground text-base">
                                                 {product.unitOfMeasure}
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -327,7 +327,7 @@ export const ProductsPage = () => {
                                     ))}
                                 </TableBody>
                             </Table>
-                            
+
                             {/* Pagination Controls */}
                             {totalPages > 1 && (
                                 <div className="flex items-center justify-between px-2 py-4 border-t border-border mt-4">
@@ -493,15 +493,15 @@ export const ProductsPage = () => {
                     <div className="p-4 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                         <FileUp className="h-8 w-8 text-muted-foreground" />
                         <span className="text-sm font-medium">{importFile ? importFile.name : 'Click to select CSV file'}</span>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            className="hidden" 
-                            accept=".csv" 
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".csv"
                             onChange={(e) => setImportFile(e.target.files?.[0] || null)}
                         />
                     </div>
-                    
+
                     <div className="space-y-2">
                         <h4 className="text-sm font-semibold">Instructions:</h4>
                         <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">

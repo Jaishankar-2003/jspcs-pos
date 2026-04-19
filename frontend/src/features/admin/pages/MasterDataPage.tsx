@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { 
-    Tag, 
-    Ruler, 
-    Plus, 
-    Trash2, 
-    Loader2, 
-    AlertCircle 
+import {
+    Tag,
+    Ruler,
+    Plus,
+    Trash2,
+    Loader2,
+    AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -23,9 +23,9 @@ const mastersApi = {
     addCategory: async (name: string) => {
         const res = await fetch('/api/masters/categories', {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             body: JSON.stringify({ name })
         });
@@ -46,9 +46,9 @@ const mastersApi = {
     addUnit: async (name: string) => {
         const res = await fetch('/api/masters/units', {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             body: JSON.stringify({ name })
         });
@@ -70,9 +70,9 @@ const mastersApi = {
     addSubCategory: async (name: string, categoryId: string) => {
         const res = await fetch('/api/masters/subcategories', {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             body: JSON.stringify({ name, categoryId })
         });
@@ -88,9 +88,9 @@ const mastersApi = {
 
 export const MasterDataPage = () => {
     const [activeTab, setActiveTab] = useState<'categories' | 'units' | 'subcategories'>('categories');
-    const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
-    const [units, setUnits] = useState<{id: string, name: string}[]>([]);
-    const [subCategories, setSubCategories] = useState<{id: string, name: string, categoryId: string}[]>([]);
+    const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
+    const [units, setUnits] = useState<{ id: string, name: string }[]>([]);
+    const [subCategories, setSubCategories] = useState<{ id: string, name: string, categoryId: string }[]>([]);
     const [loading, setLoading] = useState(true);
     const [newValue, setNewValue] = useState('');
     const [selectedCategoryId, setSelectedCategoryId] = useState('');
@@ -166,24 +166,24 @@ export const MasterDataPage = () => {
             </div>
 
             <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
-                <Button 
-                    variant={activeTab === 'categories' ? 'default' : 'ghost'} 
+                <Button
+                    variant={activeTab === 'categories' ? 'default' : 'ghost'}
                     onClick={() => setActiveTab('categories')}
                     className="gap-2"
                 >
                     <Tag className="h-4 w-4" />
                     Categories
                 </Button>
-                <Button 
-                    variant={activeTab === 'units' ? 'default' : 'ghost'} 
+                <Button
+                    variant={activeTab === 'units' ? 'default' : 'ghost'}
                     onClick={() => setActiveTab('units')}
                     className="gap-2"
                 >
                     <Ruler className="h-4 w-4" />
                     Units
                 </Button>
-                <Button 
-                    variant={activeTab === 'subcategories' ? 'default' : 'ghost'} 
+                <Button
+                    variant={activeTab === 'subcategories' ? 'default' : 'ghost'}
                     onClick={() => setActiveTab('subcategories')}
                     className="gap-2"
                 >
@@ -192,7 +192,7 @@ export const MasterDataPage = () => {
                 </Button>
             </div>
 
-            <div className="grid md:grid-cols-[1fr,2fr] gap-6">
+            <div className="w-120 grid md:grid-cols-[1fr,2fr] gap-6">
                 {/* Add Form */}
                 <Card>
                     <CardHeader>
@@ -203,7 +203,7 @@ export const MasterDataPage = () => {
                         {activeTab === 'subcategories' && (
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Select Parent Category</label>
-                                <select 
+                                <select
                                     className="w-full p-2 bg-background border border-input rounded-md focus:ring-1 focus:ring-primary outline-none"
                                     value={selectedCategoryId}
                                     onChange={(e) => setSelectedCategoryId(e.target.value)}
@@ -217,8 +217,8 @@ export const MasterDataPage = () => {
                         )}
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Name</label>
-                            <Input 
-                                placeholder={activeTab === 'categories' ? "e.g. Beverages" : activeTab === 'units' ? "e.g. kg" : "e.g. Soft Drinks"} 
+                            <Input
+                                placeholder={activeTab === 'categories' ? "e.g. Beverages" : activeTab === 'units' ? "e.g. kg" : "e.g. Soft Drinks"}
                                 value={newValue}
                                 onChange={(e) => setNewValue(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
@@ -262,9 +262,9 @@ export const MasterDataPage = () => {
                                                 </TableCell>
                                             )}
                                             <TableCell className="text-right">
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
                                                     className="h-8 w-8 text-muted-foreground hover:text-rose-500"
                                                     onClick={() => handleDelete(item.id)}
                                                 >

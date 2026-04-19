@@ -44,9 +44,9 @@ export const BillingPage = () => {
         unit: 'unit'
     });
     const searchInputRef = useRef<HTMLInputElement>(null);
-    const [masterCategories, setMasterCategories] = useState<{id: string, name: string}[]>([]);
-    const [masterSubCategories, setMasterSubCategories] = useState<{id: string, name: string, categoryId: string}[]>([]);
-    const [masterUnits, setMasterUnits] = useState<{id: string, name: string}[]>([]);
+    const [masterCategories, setMasterCategories] = useState<{ id: string, name: string }[]>([]);
+    const [masterSubCategories, setMasterSubCategories] = useState<{ id: string, name: string, categoryId: string }[]>([]);
+    const [masterUnits, setMasterUnits] = useState<{ id: string, name: string }[]>([]);
 
     // Fetch products for search cache
     const uniqueCategories = Array.from(new Set([
@@ -162,10 +162,10 @@ export const BillingPage = () => {
 
             const savedProduct = await productsApi.create(payload);
             addItem(savedProduct);
-            
+
             // Update local products list
             setProducts([...products, savedProduct]);
-            
+
             setIsAddModalOpen(false);
             setNewProduct({ name: '', category: '', price: '', stock: '1', unit: 'unit' });
             toast.success("Product added and added to cart!");
@@ -252,29 +252,29 @@ export const BillingPage = () => {
 
                         {/* Cash Calculator Feature */}
                         <div className="pt-2 border-t border-border/50">
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 className="w-full text-muted-foreground hover:text-primary justify-between"
                                 onClick={() => setShowCalculator(!showCalculator)}
                             >
                                 <span className="font-medium">Change Calculator</span>
                                 {showCalculator ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                             </Button>
-                            
+
                             {showCalculator && (
                                 <div className="mt-3 p-4 bg-background rounded-xl border border-border shadow-sm space-y-3 animate-in fade-in slide-in-from-top-2">
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount Received (₹)</label>
-                                        <Input 
-                                            type="number" 
-                                            placeholder="Enter cash given..." 
+                                        <Input
+                                            type="number"
+                                            placeholder="Enter cash given..."
                                             value={amountGiven}
                                             onChange={(e) => setAmountGiven(e.target.value)}
                                             className="text-lg font-semibold h-12"
                                         />
                                     </div>
-                                    
+
                                     <div className="flex justify-between items-center pt-2 border-t border-border/50">
                                         <span className="text-sm font-semibold">Balance to Return:</span>
                                         <span className={cn(
@@ -317,9 +317,9 @@ export const BillingPage = () => {
                             {loadingProducts ? (
                                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
                             ) : (
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
                                     className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-primary hover:bg-primary/10"
                                     onClick={() => setIsAddModalOpen(true)}
                                     title="Add New Product"
@@ -341,12 +341,12 @@ export const BillingPage = () => {
                                             className="w-full flex items-center justify-between p-3 text-left hover:bg-primary/5 transition-colors border-b last:border-0"
                                         >
                                             <div className="flex flex-col">
-                                                <span className="font-medium text-sm">{product.name}</span>
-                                                <span className="text-xs text-muted-foreground">{product.sku}</span>
+                                                <span className="font-medium text-base">{product.name}</span>
+                                                <span className="text-base font-medium text-muted-foreground">{product.sku}</span>
                                             </div>
                                             <div className="flex flex-col items-end">
                                                 <span className="font-bold text-sm">₹{product.sellingPrice}</span>
-                                                <span className={cn("text-[10px]", product.currentStock > 0 ? "text-green-600" : "text-red-500")}>
+                                                <span className={cn("text-[15px]", product.currentStock > 0 ? "text-green-600" : "text-red-500")}>
                                                     {product.currentStock > 0 ? `${product.currentStock} in stock` : 'Out of Stock'}
                                                 </span>
                                             </div>
