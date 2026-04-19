@@ -52,6 +52,8 @@ class Sale(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     cashier_id = Column(String, ForeignKey("users.id"))
     total_amount = Column(Numeric(10, 2), nullable=False)
+    payment_mode = Column(String(50))
+    customer_name = Column(String(100))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     items = relationship("SaleItem", back_populates="sale", cascade="all, delete-orphan")

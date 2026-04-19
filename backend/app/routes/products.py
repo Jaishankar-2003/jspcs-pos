@@ -10,7 +10,7 @@ from decimal import Decimal
 
 router = APIRouter()
 
-@router.post("/products", response_model=schemas.ProductResponse)
+@router.post("", response_model=schemas.ProductResponse)
 def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if current_user.role != "ADMIN":
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -40,7 +40,7 @@ def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)
     db_product.stock_quantity = product.currentStock
     return db_product
 
-@router.post("/products/bulk")
+@router.post("/bulk")
 async def bulk_upload_products(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if current_user.role != "ADMIN":
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -88,7 +88,7 @@ async def bulk_upload_products(file: UploadFile = File(...), db: Session = Depen
     db.commit()
     return {"message": f"Successfully imported {count} products", "errors": errors}
 
-@router.get("/products", response_model=List[schemas.ProductResponse])
+@router.get("", response_model=List[schemas.ProductResponse])
 def list_products(db: Session = Depends(get_db)):
     products = db.query(models.Product).all()
     results = []
@@ -97,7 +97,7 @@ def list_products(db: Session = Depends(get_db)):
         results.append(p)
     return results
 
-@router.get("/products/{id}", response_model=schemas.ProductResponse)
+@router.get("/{id}", response_model=schemas.ProductResponse)
 def get_product(id: str, db: Session = Depends(get_db)):
     db_product = db.query(models.Product).filter(models.Product.id == id).first()
     if not db_product:
@@ -105,7 +105,7 @@ def get_product(id: str, db: Session = Depends(get_db)):
     db_product.stock_quantity = db_product.stock.quantity if db_product.stock else 0
     return db_product
 
-@router.put("/products/{id}", response_model=schemas.ProductResponse)
+@router.put("/{id}", response_model=schemas.ProductResponse)
 def update_product(id: str, product_update: schemas.ProductUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if current_user.role != "ADMIN":
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -129,7 +129,7 @@ def update_product(id: str, product_update: schemas.ProductUpdate, db: Session =
     db_product.stock_quantity = db_product.stock.quantity if db_product.stock else 0
     return db_product
 
-@router.delete("/products/{id}")
+@router.delete("/{id}")
 def delete_product(id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if current_user.role != "ADMIN":
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -142,7 +142,7 @@ def delete_product(id: str, db: Session = Depends(get_db), current_user: models.
     db.commit()
     return {"message": "Product deleted successfully"}
 
-@router.put("/products/{id}/stock", response_model=schemas.ProductResponse)
+@router.put("/{id}/stock", response_model=schemas.ProductResponse)
 def update_stock(id: str, stock_update: schemas.StockUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if current_user.role != "ADMIN":
         raise HTTPException(status_code=403, detail="Not authorized")

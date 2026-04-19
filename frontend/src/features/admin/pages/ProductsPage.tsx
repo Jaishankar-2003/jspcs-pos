@@ -37,6 +37,8 @@ export const ProductsPage = () => {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [importFile, setImportFile] = useState<File | null>(null);
     const [importing, setImporting] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Form state
@@ -178,6 +180,15 @@ export const ProductsPage = () => {
         p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+
+    // Reset to page 1 when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -222,6 +233,7 @@ export const ProductsPage = () => {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-16">S.No</TableHead>
                                         <TableHead>SKU</TableHead>
                                         <TableHead>Product Name</TableHead>
                                         <TableHead>Category</TableHead>
@@ -232,8 +244,11 @@ export const ProductsPage = () => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredProducts.map((product) => (
+                                    {paginatedProducts.map((product, index) => (
                                         <TableRow key={product.id}>
+                                            <TableCell className="text-muted-foreground font-medium">
+                                                {startIndex + index + 1}
+                                            </TableCell>
                                             <TableCell className="font-mono text-xs">{product.sku}</TableCell>
                                             <TableCell className="font-medium">{product.name}</TableCell>
                                             <TableCell>
@@ -266,6 +281,46 @@ export const ProductsPage = () => {
                                     ))}
                                 </TableBody>
                             </Table>
+                            
+                            {/* Pagination Controls */}
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-between px-2 py-4 border-t border-border mt-4">
+                                    <p className="text-sm text-muted-foreground">
+                                        Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, filteredProducts.length)}</span> of <span className="font-medium">{filteredProducts.length}</span> products
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                            disabled={currentPage === 1}
+                                        >
+                                            Previous
+                                        </Button>
+                                        <div className="flex items-center gap-1">
+                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                                <Button
+                                                    key={page}
+                                                    variant={currentPage === page ? "default" : "outline"}
+                                                    size="sm"
+                                                    className="w-8 h-8 p-0"
+                                                    onClick={() => setCurrentPage(page)}
+                                                >
+                                                    {page}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                            disabled={currentPage === totalPages}
+                                        >
+                                            Next
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                             {filteredProducts.length === 0 && (
                                 <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                                     <Package className="h-12 w-12 mb-4 opacity-20" />

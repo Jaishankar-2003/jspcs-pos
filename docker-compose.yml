@@ -27,9 +27,8 @@ services:
       - DATABASE_URL=postgresql://jspcs:jspcs_password@db:5432/jspcs_pos
     volumes:
       - ./backend:/app
-      - invoice_data:/app/invoices
+      - ./backend/invoices:/app/invoices
     restart: unless-stopped
 
 volumes:
   pgdata:
-  invoice_data:

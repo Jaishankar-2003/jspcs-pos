@@ -87,11 +87,17 @@ class StockUpdate(BaseModel):
     quantity: int
 
 class CartItem(BaseModel):
-    product_id: UUID
+    product_id: UUID = Field(..., alias="productId")
     quantity: int
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 class CheckoutRequest(BaseModel):
     items: List[CartItem]
+    customerName: Optional[str] = Field(None, alias="customerName")
+    paymentMode: Optional[str] = Field(None, alias="paymentMode")
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 class CheckoutResponse(BaseModel):
     sale_id: UUID

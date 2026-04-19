@@ -29,6 +29,9 @@ export const BillingPage = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loadingProducts, setLoadingProducts] = useState(false);
     const [checkoutLoading, setCheckoutLoading] = useState(false);
+    const [showCalculator, setShowCalculator] = useState(false);
+    const [amountGiven, setAmountGiven] = useState('');
+    const [customerName, setCustomerName] = useState('');
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch products for search cache
@@ -74,13 +77,10 @@ export const BillingPage = () => {
         try {
             setCheckoutLoading(true);
 
-            // Fetch current user to check counter
-            const currentUser = await usersApi.getMe();
-            if (!currentUser.cashierCounterName) {
-                alert("Checkout Failed: You are not assigned to a cashier counter. Please contact admin.");
-                setCheckoutLoading(false);
-                return;
-            }
+            // Fetch current user
+            await usersApi.getMe();
+
+            const finalCustomerName = customerName.trim() || `CUST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
             const invoiceRequest = {
                 items: items.map(item => ({
@@ -89,12 +89,14 @@ export const BillingPage = () => {
                     discountPercent: 0 // Default 0 for now
                 })),
                 paymentMode: paymentMode,
-                // Optional customer details can be added here later
-                customerName: "Walk-in Customer"
+                customerName: finalCustomerName
             };
 
             await salesApi.createInvoice(invoiceRequest);
             clearCart();
+            setAmountGiven('');
+            setCustomerName('');
+            setShowCalculator(false);
             alert("Checkout Successful! Invoice Created.");
         } catch (error) {
             console.error("Checkout Failed", error);
@@ -167,21 +169,64 @@ export const BillingPage = () => {
                             </div>
                         )}
                     </CardContent>
-                    <div className="p-6 border-t border-border bg-muted/30">
-                        <div className="flex justify-between items-center text-lg">
-                            <span className="text-muted-foreground">Subtotal</span>
-                            <span className="font-semibold">₹{subtotal.toLocaleString()}</span>
+                    <div className="p-6 border-t border-border bg-muted/30 space-y-4">
+                        <div>
+                            <div className="flex justify-between items-center text-lg">
+                                <span className="text-muted-foreground">Subtotal</span>
+                                <span className="font-semibold">₹{subtotal.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-2xl font-black mt-2">
+                                <span>Total Amount</span>
+                                <span className="text-primary font-outfit">₹{grandTotal.toLocaleString()}</span>
+                            </div>
                         </div>
-                        <div className="flex justify-between items-center text-2xl font-black mt-2">
-                            <span>Total Amount</span>
-                            <span className="text-primary font-outfit">₹{grandTotal.toLocaleString()}</span>
+
+                        {/* Cash Calculator Feature */}
+                        <div className="pt-2 border-t border-border/50">
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="w-full text-muted-foreground hover:text-primary justify-between"
+                                onClick={() => setShowCalculator(!showCalculator)}
+                            >
+                                <span className="font-medium">Change Calculator</span>
+                                {showCalculator ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                            </Button>
+                            
+                            {showCalculator && (
+                                <div className="mt-3 p-4 bg-background rounded-xl border border-border shadow-sm space-y-3 animate-in fade-in slide-in-from-top-2">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount Received (₹)</label>
+                                        <Input 
+                                            type="number" 
+                                            placeholder="Enter cash given..." 
+                                            value={amountGiven}
+                                            onChange={(e) => setAmountGiven(e.target.value)}
+                                            className="text-lg font-semibold h-12"
+                                        />
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center pt-2 border-t border-border/50">
+                                        <span className="text-sm font-semibold">Balance to Return:</span>
+                                        <span className={cn(
+                                            "text-2xl font-black tracking-tight",
+                                            (parseFloat(amountGiven || '0') - grandTotal) >= 0 ? "text-emerald-500" : "text-rose-500"
+                                        )}>
+                                            ₹{Math.max(0, parseFloat(amountGiven || '0') - grandTotal).toLocaleString()}
+                                        </span>
+                                    </div>
+                                    {(parseFloat(amountGiven || '0') > 0 && parseFloat(amountGiven || '0') < grandTotal) && (
+                                        <p className="text-xs font-medium text-rose-500 text-right animate-pulse">Insufficient amount</p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </Card>
             </div>
 
             {/* Right Column: Search & Action */}
-            <div className="w-[380px] flex flex-col gap-6 ">
+            <div className="w-[380px] flex flex-col gap-6 overflow-y-auto pr-2 scrollbar-hide">
                 <Card className="shadow-lg border-primary/20">
                     <CardHeader>
                         <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -230,6 +275,20 @@ export const BillingPage = () => {
                                     ))}
                             </div>
                         )}
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-sm border-border/50">
+                    <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium">Customer Details (Optional)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pb-4">
+                        <Input
+                            placeholder="Enter customer name or phone..."
+                            value={customerName}
+                            onChange={(e) => setCustomerName(e.target.value)}
+                            className="h-10 text-sm bg-muted/50"
+                        />
                     </CardContent>
                 </Card>
 

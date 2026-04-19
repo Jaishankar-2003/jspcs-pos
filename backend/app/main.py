@@ -23,8 +23,8 @@ os.makedirs("invoices", exist_ok=True)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
-app.include_router(products.router, prefix="/api", tags=["Products & Stock"])
-app.include_router(sales.router, prefix="/api", tags=["Sales & Billing"])
+app.include_router(products.router, prefix="/api/products", tags=["Products & Stock"])
+app.include_router(sales.router, prefix="/api/sales", tags=["Sales & Billing"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 

@@ -28,6 +28,8 @@ export const InventoryPage = () => {
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [newStock, setNewStock] = useState('');
     const [newThreshold, setNewThreshold] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const fetchInventory = async () => {
         try {
@@ -83,6 +85,15 @@ export const InventoryPage = () => {
         if (statusFilter === 'instock') return matchesSearch && !isLow;
         return matchesSearch;
     });
+
+    const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedInventory = filteredInventory.slice(startIndex, startIndex + itemsPerPage);
+
+    // Reset to page 1 when search or filter changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter]);
 
     const lowStockCount = products.filter(p => {
         const t = p.low_stock_threshold || 10;
@@ -195,9 +206,11 @@ export const InventoryPage = () => {
                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
                     ) : (
-                        <Table>
+                        <>
+                            <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-16">S.No</TableHead>
                                     <TableHead>Product</TableHead>
                                     <TableHead>SKU</TableHead>
                                     <TableHead className="text-right">Stock</TableHead>
@@ -208,13 +221,16 @@ export const InventoryPage = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredInventory.map((item) => {
+                                {paginatedInventory.map((item, index) => {
                                     const threshold = item.low_stock_threshold || 10;
                                     const isLow = (item.currentStock || 0) <= threshold;
                                     const isOut = (item.currentStock || 0) <= 0;
                                     
                                     return (
                                         <TableRow key={item.id}>
+                                            <TableCell className="text-muted-foreground font-medium">
+                                                {startIndex + index + 1}
+                                            </TableCell>
                                             <TableCell className="font-medium">{item.name}</TableCell>
                                             <TableCell className="font-mono text-xs">{item.sku}</TableCell>
                                             <TableCell className="text-right font-bold">
@@ -249,8 +265,49 @@ export const InventoryPage = () => {
                                 })}
                             </TableBody>
                         </Table>
-                    )}
-                </CardContent>
+                        
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between px-2 py-4 border-t border-border mt-4">
+                                <p className="text-sm text-muted-foreground">
+                                    Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, filteredInventory.length)}</span> of <span className="font-medium">{filteredInventory.length}</span> items
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                    >
+                                        Previous
+                                        </Button>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                            <Button
+                                                key={page}
+                                                variant={currentPage === page ? "default" : "outline"}
+                                                size="sm"
+                                                className="w-8 h-8 p-0"
+                                                onClick={() => setCurrentPage(page)}
+                                            >
+                                                {page}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        Next
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+            </CardContent>
             </Card>
 
             <Modal

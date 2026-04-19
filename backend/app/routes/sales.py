@@ -8,7 +8,7 @@ from decimal import Decimal
 
 router = APIRouter()
 
-@router.post("/sales", response_model=schemas.CheckoutResponse)
+@router.post("/invoices", response_model=schemas.CheckoutResponse)
 def checkout(request: schemas.CheckoutRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     total_amount = Decimal("0.00")
     sale_items_to_create = []
@@ -39,7 +39,9 @@ def checkout(request: schemas.CheckoutRequest, db: Session = Depends(get_db), cu
     # Create the sale header
     new_sale = models.Sale(
         cashier_id=current_user.id,
-        total_amount=total_amount
+        total_amount=total_amount,
+        payment_mode=request.paymentMode,
+        customer_name=request.customerName
     )
     db.add(new_sale)
     db.flush() # Get sale ID
@@ -62,7 +64,7 @@ def checkout(request: schemas.CheckoutRequest, db: Session = Depends(get_db), cu
     db.refresh(new_sale)
     
     # Generate Invoice
-    invoice_path = generate_invoice_pdf(new_sale, final_items_for_pdf)
+    invoice_path = generate_invoice_pdf(new_sale, final_items_for_pdf, current_user.full_name)
     
     return {
         "sale_id": new_sale.id,
@@ -70,7 +72,7 @@ def checkout(request: schemas.CheckoutRequest, db: Session = Depends(get_db), cu
         "invoice_path": invoice_path
     }
 
-@router.get("/sales", response_model=list[schemas.SaleResponse])
+@router.get("/invoices", response_model=list[schemas.SaleResponse])
 def list_sales(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if current_user.role != "ADMIN":
         # Cashiers can only see their own sales? Or all? User said "View reports" for Admin.
