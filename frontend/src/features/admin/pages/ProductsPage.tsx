@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Plus,
     Search,
@@ -7,7 +7,9 @@ import {
     Package,
     AlertCircle,
     FileDown,
-    Loader2
+    FileUp,
+    Loader2,
+    Download
 } from 'lucide-react';
 import {
     Table,
@@ -24,12 +26,18 @@ import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/utils/utils';
 import { productsApi } from '@/api/products';
 import type { Product } from '@/types';
+import toast from 'react-hot-toast';
 
 export const ProductsPage = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importing, setImporting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -58,9 +66,29 @@ export const ProductsPage = () => {
         fetchProducts();
     }, []);
 
-    const handleCreateProduct = async () => {
+    const handleOpenAdd = () => {
+        setEditingProduct(null);
+        setFormData({ sku: '', name: '', category: '', price: '', stock: '', unit: '', gstRate: '18' });
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEdit = (product: Product) => {
+        setEditingProduct(product);
+        setFormData({
+            sku: product.sku || '',
+            name: product.name || '',
+            category: product.category || '',
+            price: product.sellingPrice?.toString() || '0',
+            stock: product.currentStock?.toString() || '0',
+            unit: product.unitOfMeasure || '',
+            gstRate: product.gstRate?.toString() || '18'
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleSaveProduct = async () => {
         try {
-            await productsApi.create({
+            const payload = {
                 sku: formData.sku,
                 name: formData.name,
                 category: formData.category,
@@ -68,13 +96,20 @@ export const ProductsPage = () => {
                 gstRate: parseFloat(formData.gstRate),
                 currentStock: parseInt(formData.stock),
                 unitOfMeasure: formData.unit || 'unit'
-            });
-            setIsAddModalOpen(false);
-            setFormData({ sku: '', name: '', category: '', price: '', stock: '', unit: '', gstRate: '18' });
-            fetchProducts(); // Refresh list
+            };
+
+            if (editingProduct) {
+                await productsApi.update(editingProduct.id, payload);
+                toast.success('Product updated successfully!');
+            } else {
+                await productsApi.create(payload);
+                toast.success('Product created successfully!');
+            }
+            setIsModalOpen(false);
+            fetchProducts();
         } catch (error) {
-            console.error('Failed to create product', error);
-            alert('Failed to create product. Please check logic/console.');
+            console.error('Failed to save product', error);
+            toast.error('Failed to save product.');
         }
     };
 
@@ -82,12 +117,60 @@ export const ProductsPage = () => {
         if (window.confirm('Are you sure you want to delete this product?')) {
             try {
                 await productsApi.delete(id);
+                toast.success('Product deleted successfully');
                 fetchProducts();
             } catch (error) {
                 console.error('Failed to delete product', error);
-                alert('Failed to delete product.');
+                toast.error('Failed to delete product.');
             }
         }
+    };
+
+    const handleImport = async () => {
+        if (!importFile) return;
+        try {
+            setImporting(true);
+            const formData = new FormData();
+            formData.append('file', importFile);
+            
+            const response = await fetch('/api/products/bulk', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: formData
+            });
+            
+            const result = await response.json();
+            if (response.ok) {
+                toast.success(result.message);
+                if (result.errors && result.errors.length > 0) {
+                    console.warn('Import warnings:', result.errors);
+                    toast(result.errors.join('\n'), { icon: '⚠️', duration: 5000 });
+                }
+                setIsImportModalOpen(false);
+                setImportFile(null);
+                fetchProducts();
+            } else {
+                toast.error(result.detail || 'Bulk import failed');
+            }
+        } catch (error) {
+            console.error('Bulk import error', error);
+            toast.error('Bulk import failed.');
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    const downloadSampleCSV = () => {
+        const headers = "sku,name,category,brand,unitOfMeasure,sellingPrice,gstRate,hsnCode,isTaxable,currentStock,lowStockThreshold\n";
+        const sample = "SKU-101,Sample Product,Groceries,BrandX,kg,150.00,18,HSN123,true,50,10\nSKU-102,Another Product,Electronics,BrandY,unit,2500.00,12,HSN456,true,5,2";
+        const blob = new Blob([headers + sample], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'products_sample.csv';
+        a.click();
     };
 
     const filteredProducts = products.filter(p =>
@@ -103,14 +186,11 @@ export const ProductsPage = () => {
                     <p className="text-muted-foreground">Manage your inventory, prices, and categories.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <FileDown className="mr-2 h-4 w-4" />
-                        Export CSV
+                    <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+                        <FileUp className="mr-2 h-4 w-4" />
+                        Bulk Upload
                     </Button>
-                    <Button onClick={() => {
-                        setFormData({ sku: '', name: '', category: '', price: '', stock: '', unit: '', gstRate: '18' });
-                        setIsAddModalOpen(true);
-                    }}>
+                    <Button onClick={handleOpenAdd}>
                         <Plus className="mr-2 h-4 w-4" />
                         Add Product
                     </Button>
@@ -147,6 +227,7 @@ export const ProductsPage = () => {
                                         <TableHead>Category</TableHead>
                                         <TableHead className="text-right">Price</TableHead>
                                         <TableHead className="text-right">Stock</TableHead>
+                                        <TableHead className="text-right">Unit</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -161,38 +242,19 @@ export const ProductsPage = () => {
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right">₹{(product.sellingPrice || 0).toLocaleString()}</TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex flex-col items-end">
-                                                    <span className={cn(
-                                                        "font-medium",
-                                                        (product.currentStock || 0) <= 10 ? "text-rose-500" : "text-foreground"
-                                                    )}>
-                                                        {product.currentStock} {product.unitOfMeasure}
-                                                    </span>
-                                                    {(product.currentStock || 0) <= 10 && (
-                                                        <span className="flex items-center text-[10px] text-rose-500 font-semibold uppercase tracking-wider">
-                                                            <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
-                                                            Low Stock
-                                                        </span>
-                                                    )}
-                                                </div>
+                                            <TableCell className="text-right font-bold">
+                                                <span className={cn(
+                                                    (product.currentStock || 0) <= 10 ? "text-rose-500" : "text-foreground"
+                                                )}>
+                                                    {product.currentStock}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-right text-muted-foreground text-xs">
+                                                {product.unitOfMeasure}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => {
-                                                        setFormData({
-                                                            sku: product.sku || '',
-                                                            name: product.name || '',
-                                                            category: product.category || '',
-                                                            price: product.sellingPrice?.toString() || '',
-                                                            stock: product.currentStock?.toString() || '',
-                                                            unit: product.unitOfMeasure || '',
-                                                            gstRate: product.gstRate?.toString() || '18'
-                                                        });
-                                                        // Note: We need a selectedProductId state to distinguish between Add and Edit
-                                                        // But for now let's just implement delete to satisfy basic requirements.
-                                                        alert('Edit feature coming in full deployment.');
-                                                    }}>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleOpenEdit(product)}>
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-rose-500" onClick={() => handleDeleteProduct(product.id!)}>
@@ -215,13 +277,15 @@ export const ProductsPage = () => {
                 </CardContent>
             </Card>
 
+            {/* Add/Edit Modal */}
             <Modal
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                title="Add New Product"
-                description="Fill in the details to add a product to your catalog."
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={editingProduct ? "Edit Product" : "Add New Product"}
+                description={editingProduct ? "Update product information." : "Fill in the details to add a product to your catalog."}
             >
                 <div className="space-y-4">
+                    {/* ... form content ... */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">SKU/Barcode</label>
@@ -259,7 +323,7 @@ export const ProductsPage = () => {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Initial Stock</label>
+                            <label className="text-sm font-medium">Stock Level</label>
                             <Input
                                 type="number"
                                 placeholder="0"
@@ -279,12 +343,55 @@ export const ProductsPage = () => {
                         </div>
                     </div>
                     <div className="flex justify-end gap-3 pt-4">
-                        <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleCreateProduct}>Save Product</Button>
+                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveProduct}>{editingProduct ? "Update Product" : "Save Product"}</Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Import Modal */}
+            <Modal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                title="Bulk Product Upload"
+                description="Upload a CSV file to add multiple products at once."
+            >
+                <div className="space-y-6 pt-4">
+                    <div className="p-4 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                        <FileUp className="h-8 w-8 text-muted-foreground" />
+                        <span className="text-sm font-medium">{importFile ? importFile.name : 'Click to select CSV file'}</span>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept=".csv" 
+                            onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                        />
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <h4 className="text-sm font-semibold">Instructions:</h4>
+                        <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                            <li>File must be in **CSV** format.</li>
+                            <li>SKU must be unique for every product.</li>
+                            <li>Columns should match the sample template exactly.</li>
+                        </ul>
+                    </div>
+
+                    <Button variant="outline" size="sm" className="w-full" onClick={downloadSampleCSV}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Sample Template
+                    </Button>
+
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button variant="outline" onClick={() => setIsImportModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleImport} disabled={!importFile || importing}>
+                            {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+                            Start Upload
+                        </Button>
                     </div>
                 </div>
             </Modal>
         </div>
     );
 };
-

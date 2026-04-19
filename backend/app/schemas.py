@@ -40,31 +40,49 @@ class TokenResponse(BaseModel):
 
 class ProductCreate(BaseModel):
     sku: str
+    barcode: Optional[str] = None
     name: str
-    price: Decimal
+    category: Optional[str] = None
+    brand: Optional[str] = None
+    unitOfMeasure: Optional[str] = Field(None, alias="unitOfMeasure")
+    sellingPrice: Decimal = Field(..., alias="sellingPrice")
+    gstRate: Decimal = Field(0, alias="gstRate")
+    hsnCode: Optional[str] = Field(None, alias="hsnCode")
+    isTaxable: bool = Field(True, alias="isTaxable")
     low_stock_threshold: int = 10
-    initial_stock: int = 0
+    currentStock: int = Field(0, alias="currentStock")
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
-    price: Optional[Decimal] = None
+    sellingPrice: Optional[Decimal] = Field(None, alias="sellingPrice")
     low_stock_threshold: Optional[int] = None
     is_active: Optional[bool] = None
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 class ProductResponse(BaseModel):
     id: UUID
     sku: str
+    barcode: Optional[str] = None
     name: str
+    category: Optional[str] = None
+    brand: Optional[str] = None
+    unitOfMeasure: Optional[str] = Field(None, validation_alias="unit_of_measure", serialization_alias="unitOfMeasure")
     price: Decimal
+    sellingPrice: Decimal = Field(..., validation_alias="price", serialization_alias="sellingPrice")
+    gstRate: Decimal = Field(0, validation_alias="gst_rate", serialization_alias="gstRate")
+    hsnCode: Optional[str] = Field(None, validation_alias="hsn_code", serialization_alias="hsnCode")
+    isTaxable: bool = Field(True, validation_alias="is_taxable", serialization_alias="isTaxable")
     low_stock_threshold: int
-    is_active: bool
-    stock_quantity: Optional[int] = 0
-    sellingPrice: Optional[Decimal] = None
-    currentStock: Optional[int] = None
-    availableStock: Optional[int] = None
+    isActive: bool = Field(True, validation_alias="is_active", serialization_alias="isActive")
+    stock_quantity: int = 0
+    currentStock: int = Field(0, validation_alias="stock_quantity", serialization_alias="currentStock")
+    availableStock: int = Field(0, validation_alias="stock_quantity", serialization_alias="availableStock")
     
-    model_config = ConfigDict(from_attributes=True)
-# ... (rest of the file remains same)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
 class StockUpdate(BaseModel):
     quantity: int
 

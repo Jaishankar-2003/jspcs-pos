@@ -24,8 +24,15 @@ class Product(Base):
 
     id = Column(String, primary_key=True, default=generate_uuid)
     sku = Column(String(50), unique=True, index=True, nullable=False)
+    barcode = Column(String(50))
     name = Column(String(200), nullable=False)
+    category = Column(String(100))
+    brand = Column(String(100))
+    unit_of_measure = Column(String(50))
     price = Column(Numeric(10, 2), nullable=False)
+    gst_rate = Column(Numeric(5, 2), default=0)
+    hsn_code = Column(String(20))
+    is_taxable = Column(Boolean, default=True)
     low_stock_threshold = Column(Integer, default=10)
     is_active = Column(Boolean, default=True)
 

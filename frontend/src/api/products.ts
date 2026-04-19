@@ -22,6 +22,10 @@ export const productsApi = {
         const { data } = await api.put<Product>(`/products/${id}`, product);
         return data;
     },
+    updateStock: async (id: string, quantity: number): Promise<Product> => {
+        const { data } = await api.put<Product>(`/products/${id}/stock`, { quantity });
+        return data;
+    },
     delete: async (id: string): Promise<void> => {
         await api.delete(`/products/${id}`);
     },

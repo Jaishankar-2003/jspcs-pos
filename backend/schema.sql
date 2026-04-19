@@ -14,8 +14,15 @@ CREATE TABLE users (
 CREATE TABLE products (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sku VARCHAR(50) NOT NULL UNIQUE,
+    barcode VARCHAR(50),
     name VARCHAR(200) NOT NULL,
+    category VARCHAR(100),
+    brand VARCHAR(100),
+    unit_of_measure VARCHAR(50),
     price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+    gst_rate DECIMAL(5, 2) DEFAULT 0,
+    hsn_code VARCHAR(20),
+    is_taxable BOOLEAN DEFAULT TRUE,
     low_stock_threshold INTEGER DEFAULT 10,
     is_active BOOLEAN DEFAULT TRUE
 );

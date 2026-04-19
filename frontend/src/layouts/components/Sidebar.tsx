@@ -5,13 +5,15 @@ import {
     Users,
     FileText,
     Settings,
-    ShoppingCart
+    ShoppingCart,
+    Boxes
 } from 'lucide-react';
 import { cn } from '@/utils/utils';
 
 const adminNavItems = [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
     { label: 'Products', icon: Package, href: '/admin/products' },
+    { label: 'Inventory', icon: Boxes, href: '/admin/inventory' },
     { label: 'Users', icon: Users, href: '/admin/users' },
     { label: 'Reports', icon: FileText, href: '/admin/reports' },
     { label: 'Settings', icon: Settings, href: '/admin/settings' },
