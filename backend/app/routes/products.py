@@ -12,7 +12,7 @@ router = APIRouter()
 
 @router.post("", response_model=schemas.ProductResponse)
 def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    if current_user.role != "ADMIN":
+    if current_user.role not in ["ADMIN", "CASHIER"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     db_product = models.Product(

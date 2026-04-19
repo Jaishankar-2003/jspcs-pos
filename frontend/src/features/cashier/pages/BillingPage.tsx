@@ -21,6 +21,8 @@ import type { Product } from '@/types';
 import { productsApi } from '@/api/products';
 import { usersApi } from '@/api/users';
 import { salesApi } from '@/api/sales';
+import { Modal } from '@/components/ui/Modal';
+import toast from 'react-hot-toast';
 
 export const BillingPage = () => {
     const { items, addItem, removeItem, updateQuantity, subtotal, clearCart } = useCartStore();
@@ -32,6 +34,14 @@ export const BillingPage = () => {
     const [showCalculator, setShowCalculator] = useState(false);
     const [amountGiven, setAmountGiven] = useState('');
     const [customerName, setCustomerName] = useState('');
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [newProduct, setNewProduct] = useState({
+        name: '',
+        category: '',
+        price: '',
+        stock: '1',
+        unit: 'unit'
+    });
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch products for search cache
@@ -103,6 +113,39 @@ export const BillingPage = () => {
             alert("Checkout Failed. Please try again.");
         } finally {
             setCheckoutLoading(false);
+        }
+    };
+
+    const handleSaveCustomProduct = async () => {
+        if (!newProduct.name || !newProduct.price) {
+            toast.error("Name and Price are required");
+            return;
+        }
+
+        try {
+            const payload = {
+                sku: `CUSTOM-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+                name: newProduct.name,
+                category: newProduct.category || 'General',
+                sellingPrice: parseFloat(newProduct.price),
+                currentStock: parseInt(newProduct.stock) || 1,
+                unitOfMeasure: newProduct.unit || 'unit',
+                gstRate: 0,
+                isTaxable: false
+            };
+
+            const savedProduct = await productsApi.create(payload);
+            addItem(savedProduct);
+            
+            // Update local products list
+            setProducts([...products, savedProduct]);
+            
+            setIsAddModalOpen(false);
+            setNewProduct({ name: '', category: '', price: '', stock: '1', unit: 'unit' });
+            toast.success("Product added and added to cart!");
+        } catch (error) {
+            console.error("Failed to add product", error);
+            toast.error("Failed to add product");
         }
     };
 
@@ -245,8 +288,18 @@ export const BillingPage = () => {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 disabled={loadingProducts}
                             />
-                            {loadingProducts && (
+                            {loadingProducts ? (
                                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                            ) : (
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-primary hover:bg-primary/10"
+                                    onClick={() => setIsAddModalOpen(true)}
+                                    title="Add New Product"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </Button>
                             )}
                         </div>
 
@@ -345,6 +398,67 @@ export const BillingPage = () => {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Manual Product Addition Modal */}
+            <Modal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                title="Add Custom Product"
+                description="Manually add a product that is not in the system."
+            >
+                <div className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Product Name</label>
+                        <Input
+                            placeholder="Enter product name"
+                            value={newProduct.name}
+                            onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Category</label>
+                            <Input
+                                placeholder="General"
+                                value={newProduct.category}
+                                onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Unit</label>
+                            <Input
+                                placeholder="unit, kg, etc."
+                                value={newProduct.unit}
+                                onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Price (₹)</label>
+                            <Input
+                                type="number"
+                                placeholder="0.00"
+                                value={newProduct.price}
+                                onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Stock Count</label>
+                            <Input
+                                type="number"
+                                placeholder="1"
+                                value={newProduct.stock}
+                                onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveCustomProduct}>Add to Cart</Button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };
