@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { cn } from '@/utils/utils';
 import { salesApi } from '@/api/sales';
+import toast from 'react-hot-toast';
 import type { InvoiceResponse } from '@/types';
 
 export const InvoiceHistoryPage = () => {
@@ -74,7 +75,7 @@ export const InvoiceHistoryPage = () => {
                     <p className="text-muted-foreground">Review and manage past sales transactions.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => alert("Date filtering coming soon!")}>
+                    <Button variant="outline" onClick={() => toast("Date filtering coming soon!")}>
                         <Calendar className="mr-2 h-4 w-4" />
                         Today
                     </Button>

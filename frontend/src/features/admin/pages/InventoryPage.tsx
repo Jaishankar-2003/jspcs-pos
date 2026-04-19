@@ -18,6 +18,7 @@ import { StatsCard } from '@/components/ui/StatsCard';
 import { productsApi } from '@/api/products';
 import { Modal } from '@/components/ui/Modal';
 import type { Product } from '@/types';
+import toast from 'react-hot-toast';
 
 export const InventoryPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -65,10 +66,10 @@ export const InventoryPage = () => {
             }
             setIsAdjustModalOpen(false);
             fetchInventory();
-            alert('Inventory updated successfully!');
+            toast.success('Inventory updated successfully!');
         } catch (error) {
             console.error("Failed to update inventory", error);
-            alert("Failed to update inventory.");
+            toast.error("Failed to update inventory.");
         }
     };
 

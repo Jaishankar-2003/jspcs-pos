@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { cn } from '@/utils/utils';
+import toast from 'react-hot-toast';
 
 export const SettingsPage = () => {
     const [activeTab, setActiveTab] = useState('General');
@@ -42,16 +43,21 @@ export const SettingsPage = () => {
         setTimeout(() => {
             localStorage.setItem('pos_general_settings', JSON.stringify(generalSettings));
             setLoading(false);
-            alert("Settings saved successfully!");
+            toast.success("Settings saved successfully!");
         }, 800);
     };
 
-    const handleBackup = () => {
-        setLoading(true);
-        setTimeout(() => {
+    const handleBackup = async () => {
+        try {
+            setLoading(true);
+            // Simulate backup
+            await new Promise(r => setTimeout(r, 1500));
+            toast.success("Database backup created successfully!");
+        } catch (error) {
+            toast.error("Backup failed");
+        } finally {
             setLoading(false);
-            alert("Database backup created successfully! Checked logic.");
-        }, 1500);
+        }
     };
 
     const navItems = [
@@ -153,7 +159,7 @@ export const SettingsPage = () => {
                                         </div>
                                     </div>
                                     <div className="pt-4">
-                                        <Button onClick={() => alert("Store Info Saved (Mock)")}>Save Info</Button>
+                                        <Button onClick={() => toast.success("Store Info Saved (Mock)")}>Save Info</Button>
                                     </div>
                                 </div>
                             </CardContent>

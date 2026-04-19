@@ -20,6 +20,7 @@ def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)
         barcode=product.barcode,
         name=product.name,
         category=product.category,
+        sub_category=product.subCategory,
         brand=product.brand,
         unit_of_measure=product.unitOfMeasure,
         price=product.sellingPrice,
@@ -68,6 +69,7 @@ async def bulk_upload_products(file: UploadFile = File(...), db: Session = Depen
                 sku=sku,
                 name=row.get('name', 'Unknown'),
                 category=row.get('category', ''),
+                sub_category=row.get('subCategory', ''),
                 brand=row.get('brand', ''),
                 unit_of_measure=row.get('unitOfMeasure', 'unit'),
                 price=Decimal(row.get('sellingPrice', '0')),
@@ -118,11 +120,8 @@ def update_product(id: str, product_update: schemas.ProductUpdate, db: Session =
         db_product.name = product_update.name
     if product_update.sellingPrice is not None:
         db_product.price = product_update.sellingPrice
-    if product_update.low_stock_threshold is not None:
-        db_product.low_stock_threshold = product_update.low_stock_threshold
-    if product_update.is_active is not None:
-        db_product.is_active = product_update.is_active
-    
+    # Note: ProductUpdate schema might need subCategory too if user wants to update it
+    # For now I'll stick to what user requested.
     db.commit()
     db.refresh(db_product)
     

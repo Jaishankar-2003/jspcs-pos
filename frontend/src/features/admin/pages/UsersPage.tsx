@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/Input';
 import { cn } from '@/utils/utils';
 import { Modal } from '@/components/ui/Modal';
 import { usersApi } from '@/api/users';
+import toast from 'react-hot-toast';
 import type { CreateUserRequest, UserResponse } from '@/api/users';
 
 export const UsersPage = () => {
@@ -97,16 +98,16 @@ export const UsersPage = () => {
         try {
             if (editingUser) {
                 await usersApi.update(editingUser.id, formData);
-                alert("User updated successfully!");
+                toast.success("User updated successfully!");
             } else {
                 await usersApi.create(formData);
-                alert("User created successfully!");
+                toast.success("User created successfully!");
             }
             setIsModalOpen(false);
             fetchUsers();
         } catch (error) {
             console.error("Failed to save user", error);
-            alert("Failed to save user. Please check console/logs.");
+            toast.error("Failed to save user. Please check console/logs.");
         }
     };
 
@@ -115,9 +116,10 @@ export const UsersPage = () => {
             try {
                 await usersApi.delete(id);
                 fetchUsers();
+                toast.success("User deleted");
             } catch (error) {
                 console.error("Failed to delete user", error);
-                alert("Failed to delete user.");
+                toast.error("Failed to delete user.");
             }
         }
     };

@@ -38,19 +38,44 @@ export const BillingPage = () => {
     const [newProduct, setNewProduct] = useState({
         name: '',
         category: '',
+        subCategory: '',
         price: '',
         stock: '1',
         unit: 'unit'
     });
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const [masterCategories, setMasterCategories] = useState<{id: string, name: string}[]>([]);
+    const [masterSubCategories, setMasterSubCategories] = useState<{id: string, name: string, categoryId: string}[]>([]);
+    const [masterUnits, setMasterUnits] = useState<{id: string, name: string}[]>([]);
 
     // Fetch products for search cache
+    const uniqueCategories = Array.from(new Set([
+        ...products.map(p => p.category).filter(Boolean),
+        ...masterCategories.map(c => c.name)
+    ]));
+    const uniqueSubCategories = Array.from(new Set([
+        ...products.map(p => p.subCategory).filter(Boolean),
+        ...masterSubCategories.map(s => s.name)
+    ]));
+    const uniqueUnits = Array.from(new Set([
+        ...products.map(p => p.unitOfMeasure).filter(Boolean),
+        ...masterUnits.map(u => u.name)
+    ]));
+
     useEffect(() => {
         const loadProducts = async () => {
             try {
                 setLoadingProducts(true);
-                const data = await productsApi.getAll();
-                setProducts(data);
+                const [prodData, cats, subcats, uns] = await Promise.all([
+                    productsApi.getAll(),
+                    fetch('/api/masters/categories', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
+                    fetch('/api/masters/subcategories', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
+                    fetch('/api/masters/units', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json())
+                ]);
+                setProducts(prodData);
+                setMasterCategories(Array.isArray(cats) ? cats : []);
+                setMasterSubCategories(Array.isArray(subcats) ? subcats : []);
+                setMasterUnits(Array.isArray(uns) ? uns : []);
             } catch (error) {
                 console.error("Failed to load products", error);
             } finally {
@@ -107,10 +132,10 @@ export const BillingPage = () => {
             setAmountGiven('');
             setCustomerName('');
             setShowCalculator(false);
-            alert("Checkout Successful! Invoice Created.");
+            toast.success("Checkout Successful! Invoice Created.");
         } catch (error) {
             console.error("Checkout Failed", error);
-            alert("Checkout Failed. Please try again.");
+            toast.error("Checkout Failed. Please try again.");
         } finally {
             setCheckoutLoading(false);
         }
@@ -127,6 +152,7 @@ export const BillingPage = () => {
                 sku: `CUSTOM-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
                 name: newProduct.name,
                 category: newProduct.category || 'General',
+                subCategory: newProduct.subCategory || 'General',
                 sellingPrice: parseFloat(newProduct.price),
                 currentStock: parseInt(newProduct.stock) || 1,
                 unitOfMeasure: newProduct.unit || 'unit',
@@ -419,10 +445,30 @@ export const BillingPage = () => {
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Category</label>
                             <Input
-                                placeholder="General"
+                                placeholder="e.g. Beverages"
                                 value={newProduct.category}
                                 onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                                list="billing-category-list"
                             />
+                            <datalist id="billing-category-list">
+                                {uniqueCategories.map(cat => (
+                                    <option key={cat} value={cat} />
+                                ))}
+                            </datalist>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Sub Category (Optional)</label>
+                            <Input
+                                placeholder="e.g. Soft Drinks"
+                                value={newProduct.subCategory}
+                                onChange={(e) => setNewProduct({ ...newProduct, subCategory: e.target.value })}
+                                list="billing-subcategory-list"
+                            />
+                            <datalist id="billing-subcategory-list">
+                                {uniqueSubCategories.map(sub => (
+                                    <option key={sub} value={sub} />
+                                ))}
+                            </datalist>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Unit</label>
@@ -430,7 +476,17 @@ export const BillingPage = () => {
                                 placeholder="unit, kg, etc."
                                 value={newProduct.unit}
                                 onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })}
+                                list="billing-unit-list"
                             />
+                            <datalist id="billing-unit-list">
+                                {uniqueUnits.map(unit => (
+                                    <option key={unit} value={unit} />
+                                ))}
+                                <option value="kg" />
+                                <option value="gram" />
+                                <option value="unit" />
+                                <option value="box" />
+                            </datalist>
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">

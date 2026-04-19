@@ -9,7 +9,8 @@ import {
     FileDown,
     FileUp,
     Loader2,
-    Download
+    Download,
+    Filter
 } from 'lucide-react';
 import {
     Table,
@@ -32,6 +33,7 @@ export const ProductsPage = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('All');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -40,12 +42,16 @@ export const ProductsPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [masterCategories, setMasterCategories] = useState<{id: string, name: string}[]>([]);
+    const [masterSubCategories, setMasterSubCategories] = useState<{id: string, name: string, categoryId: string}[]>([]);
+    const [masterUnits, setMasterUnits] = useState<{id: string, name: string}[]>([]);
 
     // Form state
     const [formData, setFormData] = useState({
         sku: '',
         name: '',
         category: '',
+        subCategory: '',
         price: '',
         stock: '',
         unit: '',
@@ -55,8 +61,16 @@ export const ProductsPage = () => {
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            const data = await productsApi.getAll();
-            setProducts(data);
+            const [prodData, cats, subcats, uns] = await Promise.all([
+                productsApi.getAll(),
+                fetch('/api/masters/categories', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
+                fetch('/api/masters/subcategories', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
+                fetch('/api/masters/units', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json())
+            ]);
+            setProducts(prodData);
+            setMasterCategories(Array.isArray(cats) ? cats : []);
+            setMasterSubCategories(Array.isArray(subcats) ? subcats : []);
+            setMasterUnits(Array.isArray(uns) ? uns : []);
         } catch (error) {
             console.error('Failed to fetch products', error);
         } finally {
@@ -80,6 +94,7 @@ export const ProductsPage = () => {
             sku: product.sku || '',
             name: product.name || '',
             category: product.category || '',
+            subCategory: product.subCategory || '',
             price: product.sellingPrice?.toString() || '0',
             stock: product.currentStock?.toString() || '0',
             unit: product.unitOfMeasure || '',
@@ -94,6 +109,7 @@ export const ProductsPage = () => {
                 sku: formData.sku,
                 name: formData.name,
                 category: formData.category,
+                subCategory: formData.subCategory,
                 sellingPrice: parseFloat(formData.price),
                 gstRate: parseFloat(formData.gstRate),
                 currentStock: parseInt(formData.stock),
@@ -175,19 +191,34 @@ export const ProductsPage = () => {
         a.click();
     };
 
-    const filteredProducts = products.filter(p =>
-        p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProducts = products.filter(p => {
+        const matchesSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
+
+    const uniqueCategories = Array.from(new Set([
+        ...products.map(p => p.category).filter(Boolean),
+        ...masterCategories.map(c => c.name)
+    ]));
+    const uniqueSubCategories = Array.from(new Set([
+        ...products.map(p => p.subCategory).filter(Boolean),
+        ...masterSubCategories.map(s => s.name)
+    ]));
+    const uniqueUnits = Array.from(new Set([
+        ...products.map(p => p.unitOfMeasure).filter(Boolean),
+        ...masterUnits.map(u => u.name)
+    ]));
 
     const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
 
-    // Reset to page 1 when search changes
+    // Reset to page 1 when search or category changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm]);
+    }, [searchTerm, selectedCategory]);
 
     return (
         <div className="space-y-6">
@@ -212,14 +243,29 @@ export const ProductsPage = () => {
                 <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                         <CardTitle>Catalog</CardTitle>
-                        <div className="relative w-full max-w-sm">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search products..."
-                                className="pl-9"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                        <div className="flex items-center gap-4 w-full max-w-2xl">
+                            <div className="flex items-center gap-2 flex-1 max-w-xs">
+                                <Filter className="h-4 w-4 text-muted-foreground" />
+                                <select 
+                                    className="w-full p-2 bg-background border border-input rounded-md text-sm focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                >
+                                    <option value="All">All Categories</option>
+                                    {uniqueCategories.map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search products..."
+                                    className="pl-9"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
                         </div>
                     </div>
                 </CardHeader>
@@ -351,12 +397,32 @@ export const ProductsPage = () => {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Category</label>
+                            <label className="text-sm font-medium text-primary">Category</label>
                             <Input
-                                placeholder="Beverages"
+                                placeholder="e.g. Beverages"
                                 value={formData.category}
                                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                list="category-list"
                             />
+                            <datalist id="category-list">
+                                {uniqueCategories.map(cat => (
+                                    <option key={cat} value={cat} />
+                                ))}
+                            </datalist>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-primary">Sub Category (Optional)</label>
+                            <Input
+                                placeholder="e.g. Soft Drinks"
+                                value={formData.subCategory}
+                                onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                                list="subcategory-list"
+                            />
+                            <datalist id="subcategory-list">
+                                {uniqueSubCategories.map(sub => (
+                                    <option key={sub} value={sub} />
+                                ))}
+                            </datalist>
                         </div>
                     </div>
                     <div className="space-y-2">
@@ -389,12 +455,24 @@ export const ProductsPage = () => {
                     </div>
                     <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Unit of Measure</label>
+                            <label className="text-sm font-medium text-primary">Unit of Measure (Select or Type New)</label>
                             <Input
-                                placeholder="kg, box, unit..."
+                                placeholder="e.g. kg, box, unit..."
                                 value={formData.unit}
                                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                                list="unit-list"
                             />
+                            <datalist id="unit-list">
+                                {uniqueUnits.map(unit => (
+                                    <option key={unit} value={unit} />
+                                ))}
+                                <option value="kg" />
+                                <option value="gram" />
+                                <option value="unit" />
+                                <option value="box" />
+                                <option value="litre" />
+                                <option value="ml" />
+                            </datalist>
                         </div>
                     </div>
                     <div className="flex justify-end gap-3 pt-4">

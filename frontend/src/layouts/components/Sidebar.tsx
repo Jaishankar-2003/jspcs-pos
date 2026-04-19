@@ -6,7 +6,8 @@ import {
     FileText,
     Settings,
     ShoppingCart,
-    Boxes
+    Boxes,
+    Tag
 } from 'lucide-react';
 import { cn } from '@/utils/utils';
 
@@ -15,6 +16,7 @@ const adminNavItems = [
     { label: 'Products', icon: Package, href: '/admin/products' },
     { label: 'Inventory', icon: Boxes, href: '/admin/inventory' },
     { label: 'Users', icon: Users, href: '/admin/users' },
+    { label: 'Categories & Units', icon: Tag, href: '/admin/masters' },
     { label: 'Reports', icon: FileText, href: '/admin/reports' },
     { label: 'Settings', icon: Settings, href: '/admin/settings' },
 ];

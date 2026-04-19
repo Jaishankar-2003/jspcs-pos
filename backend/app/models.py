@@ -27,6 +27,7 @@ class Product(Base):
     barcode = Column(String(50))
     name = Column(String(200), nullable=False)
     category = Column(String(100))
+    sub_category = Column(String(100))
     brand = Column(String(100))
     unit_of_measure = Column(String(50))
     price = Column(Numeric(10, 2), nullable=False)
@@ -71,3 +72,19 @@ class SaleItem(Base):
 
     sale = relationship("Sale", back_populates="items")
     product = relationship("Product")
+
+class Category(Base):
+    __tablename__ = "categories"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    name = Column(String(100), unique=True, index=True, nullable=False)
+
+class Unit(Base):
+    __tablename__ = "units"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    name = Column(String(50), unique=True, index=True, nullable=False)
+
+class SubCategory(Base):
+    __tablename__ = "sub_categories"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    category_id = Column(String, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(100), index=True, nullable=False)

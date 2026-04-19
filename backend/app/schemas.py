@@ -43,6 +43,7 @@ class ProductCreate(BaseModel):
     barcode: Optional[str] = None
     name: str
     category: Optional[str] = None
+    subCategory: Optional[str] = Field(None, alias="subCategory")
     brand: Optional[str] = None
     unitOfMeasure: Optional[str] = Field(None, alias="unitOfMeasure")
     sellingPrice: Decimal = Field(..., alias="sellingPrice")
@@ -68,6 +69,7 @@ class ProductResponse(BaseModel):
     barcode: Optional[str] = None
     name: str
     category: Optional[str] = None
+    subCategory: Optional[str] = Field(None, validation_alias="sub_category", serialization_alias="subCategory")
     brand: Optional[str] = None
     unitOfMeasure: Optional[str] = Field(None, validation_alias="unit_of_measure", serialization_alias="unitOfMeasure")
     price: Decimal
@@ -117,4 +119,30 @@ class SaleResponse(BaseModel):
     total_amount: Decimal
     created_at: datetime
     items: List[SaleItemResponse]
+    model_config = ConfigDict(from_attributes=True)
+
+class CategoryCreate(BaseModel):
+    name: str
+
+class CategoryResponse(BaseModel):
+    id: UUID
+    name: str
+    model_config = ConfigDict(from_attributes=True)
+
+class UnitCreate(BaseModel):
+    name: str
+
+class UnitResponse(BaseModel):
+    id: UUID
+    name: str
+    model_config = ConfigDict(from_attributes=True)
+
+class SubCategoryCreate(BaseModel):
+    name: str
+    categoryId: UUID = Field(..., alias="categoryId")
+
+class SubCategoryResponse(BaseModel):
+    id: UUID
+    name: str
+    categoryId: UUID = Field(..., validation_alias="category_id", serialization_alias="categoryId")
     model_config = ConfigDict(from_attributes=True)
