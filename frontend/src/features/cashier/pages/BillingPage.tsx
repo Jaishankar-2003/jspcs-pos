@@ -204,26 +204,26 @@ export const BillingPage = () => {
                                 {items.map((item) => (
                                     <div key={item.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-card/50 hover:bg-card transition-colors">
                                         <div className="flex flex-col">
-                                            <span className="font-semibold text-sm">{item.name}</span>
-                                            <span className="text-xs text-muted-foreground">₹{item.sellingPrice.toLocaleString()} per unit</span>
+                                            <span className="font-semibold text-base">{item.name}</span>
+                                            <span className="text-base text-muted-foreground">₹{item.sellingPrice.toLocaleString()} per unit</span>
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <div className="flex items-center border border-border rounded-lg bg-background">
+                                            <div className="flex items-center border border-border rounded-lg bg-background px-4 py-2">
                                                 <button
                                                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                                     className="p-1.5 hover:bg-muted transition-colors rounded-l-lg"
                                                 >
-                                                    <Minus className="h-4 w-4" />
+                                                    <Minus className="h-6 w-6" />
                                                 </button>
-                                                <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                                                <span className="w-8 text-center text-base font-bold">{item.quantity}</span>
                                                 <button
                                                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                                     className="p-1.5 hover:bg-muted transition-colors rounded-r-lg"
                                                 >
-                                                    <Plus className="h-4 w-4" />
+                                                    <Plus className="h-6 w-6" />
                                                 </button>
                                             </div>
-                                            <div className="w-20 text-right font-bold text-sm">
+                                            <div className="w-20 text-right font-bold text-lg">
                                                 ₹{item.total.toLocaleString()}
                                             </div>
                                             <button
