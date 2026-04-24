@@ -128,6 +128,7 @@ export const BillingPage = () => {
             };
 
             await salesApi.createInvoice(invoiceRequest);
+            
             clearCart();
             setAmountGiven('');
             setCustomerName('');

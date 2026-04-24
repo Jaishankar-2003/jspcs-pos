@@ -10,7 +10,9 @@ import {
     FileUp,
     Loader2,
     Download,
-    Filter
+    Filter,
+    CheckSquare,
+    Square
 } from 'lucide-react';
 import {
     Table,
@@ -45,6 +47,10 @@ export const ProductsPage = () => {
     const [masterCategories, setMasterCategories] = useState<{ id: string, name: string }[]>([]);
     const [masterSubCategories, setMasterSubCategories] = useState<{ id: string, name: string, categoryId: string }[]>([]);
     const [masterUnits, setMasterUnits] = useState<{ id: string, name: string }[]>([]);
+    
+    // Multi-select state
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isDeletingBulk, setIsDeletingBulk] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -61,16 +67,18 @@ export const ProductsPage = () => {
     const fetchProducts = async () => {
         try {
             setLoading(true);
+            const token = localStorage.getItem('token');
             const [prodData, cats, subcats, uns] = await Promise.all([
                 productsApi.getAll(),
-                fetch('/api/masters/categories', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
-                fetch('/api/masters/subcategories', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json()),
-                fetch('/api/masters/units', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json())
+                fetch('/api/masters/categories', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+                fetch('/api/masters/subcategories', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+                fetch('/api/masters/units', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
             ]);
             setProducts(prodData);
             setMasterCategories(Array.isArray(cats) ? cats : []);
             setMasterSubCategories(Array.isArray(subcats) ? subcats : []);
             setMasterUnits(Array.isArray(uns) ? uns : []);
+            setSelectedIds([]); // Clear selection after fetch
         } catch (error) {
             console.error('Failed to fetch products', error);
         } finally {
@@ -84,7 +92,7 @@ export const ProductsPage = () => {
 
     const handleOpenAdd = () => {
         setEditingProduct(null);
-        setFormData({ sku: '', name: '', category: '', price: '', stock: '', unit: '', gstRate: '18' });
+        setFormData({ sku: '', name: '', category: '', subCategory: '', price: '', stock: '', unit: '', gstRate: '18' });
         setIsModalOpen(true);
     };
 
@@ -140,6 +148,37 @@ export const ProductsPage = () => {
             } catch (error) {
                 console.error('Failed to delete product', error);
                 toast.error('Failed to delete product.');
+            }
+        }
+    };
+
+    const handleToggleSelect = (id: string) => {
+        setSelectedIds(prev => 
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const handleSelectAll = () => {
+        if (selectedIds.length === filteredProducts.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(filteredProducts.map(p => p.id));
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+        if (window.confirm(`Are you sure you want to delete ${selectedIds.length} products?`)) {
+            try {
+                setIsDeletingBulk(true);
+                const result = await productsApi.deleteBulk(selectedIds);
+                toast.success(result.message || 'Bulk delete successful');
+                fetchProducts();
+            } catch (error) {
+                console.error('Bulk delete failed', error);
+                toast.error('Bulk delete failed.');
+            } finally {
+                setIsDeletingBulk(false);
             }
         }
     };
@@ -228,6 +267,16 @@ export const ProductsPage = () => {
                     <p className="text-muted-foreground">Manage your inventory, prices, and categories.</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    {selectedIds.length > 0 && (
+                        <Button 
+                            variant="destructive" 
+                            onClick={handleBulkDelete}
+                            disabled={isDeletingBulk}
+                        >
+                            {isDeletingBulk ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                            Delete Selected ({selectedIds.length})
+                        </Button>
+                    )}
                     <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
                         <FileUp className="mr-2 h-4 w-4" />
                         Bulk Upload
@@ -279,6 +328,15 @@ export const ProductsPage = () => {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-12">
+                                            <div className="flex items-center justify-center cursor-pointer" onClick={handleSelectAll}>
+                                                {selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? (
+                                                    <CheckSquare className="h-4 w-4 text-primary" />
+                                                ) : (
+                                                    <Square className="h-4 w-4 text-muted-foreground" />
+                                                )}
+                                            </div>
+                                        </TableHead>
                                         <TableHead className="w-16">S.No</TableHead>
                                         <TableHead>SKU</TableHead>
                                         <TableHead>Product Name</TableHead>
@@ -291,7 +349,16 @@ export const ProductsPage = () => {
                                 </TableHeader>
                                 <TableBody>
                                     {paginatedProducts.map((product, index) => (
-                                        <TableRow key={product.id}>
+                                        <TableRow key={product.id} className={cn(selectedIds.includes(product.id) && "bg-muted/50")}>
+                                            <TableCell className="w-12">
+                                                <div className="flex items-center justify-center cursor-pointer" onClick={() => handleToggleSelect(product.id)}>
+                                                    {selectedIds.includes(product.id) ? (
+                                                        <CheckSquare className="h-4 w-4 text-primary" />
+                                                    ) : (
+                                                        <Square className="h-4 w-4 text-muted-foreground" />
+                                                    )}
+                                                </div>
+                                            </TableCell>
                                             <TableCell className="text-muted-foreground font-medium">
                                                 {startIndex + index + 1}
                                             </TableCell>
@@ -386,7 +453,6 @@ export const ProductsPage = () => {
                 description={editingProduct ? "Update product information." : "Fill in the details to add a product to your catalog."}
             >
                 <div className="space-y-4">
-                    {/* ... form content ... */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">SKU/Barcode</label>

@@ -29,4 +29,8 @@ export const productsApi = {
     delete: async (id: string): Promise<void> => {
         await api.delete(`/products/${id}`);
     },
+    deleteBulk: async (ids: string[]): Promise<any> => {
+        const { data } = await api.post('/products/bulk-delete', { ids });
+        return data;
+    },
 };
