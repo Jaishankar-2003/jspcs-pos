@@ -38,6 +38,7 @@ class Product(Base):
     is_active = Column(Boolean, default=True)
 
     stock = relationship("Stock", back_populates="product", uselist=False, cascade="all, delete-orphan")
+    sale_items = relationship("SaleItem", back_populates="product", cascade="all, delete-orphan")
 
 class Stock(Base):
     __tablename__ = "stock"
@@ -71,7 +72,7 @@ class SaleItem(Base):
     subtotal = Column(Numeric(10, 2), nullable=False)
 
     sale = relationship("Sale", back_populates="items")
-    product = relationship("Product")
+    product = relationship("Product", back_populates="sale_items")
 
 class Category(Base):
     __tablename__ = "categories"

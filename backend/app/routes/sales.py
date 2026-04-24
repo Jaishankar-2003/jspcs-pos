@@ -8,8 +8,12 @@ from decimal import Decimal
 
 router = APIRouter()
 
+from app.websocket_manager import manager
+from sqlalchemy import func
+from datetime import date
+
 @router.post("/invoices", response_model=schemas.CheckoutResponse)
-def checkout(request: schemas.CheckoutRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def checkout(request: schemas.CheckoutRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     total_amount = Decimal("0.00")
     sale_items_to_create = []
     
@@ -56,7 +60,7 @@ def checkout(request: schemas.CheckoutRequest, db: Session = Depends(get_db), cu
         # Deduct stock
         db_product.stock.quantity -= sale_item.quantity
         
-        # Prepare for PDF (including product name which isn't in SaleItem model directly for simplicity)
+        # Prepare for PDF
         sale_item.product_name = db_product.name
         final_items_for_pdf.append(sale_item)
         
@@ -65,6 +69,23 @@ def checkout(request: schemas.CheckoutRequest, db: Session = Depends(get_db), cu
     
     # Generate Invoice
     invoice_path = generate_invoice_pdf(new_sale, final_items_for_pdf, current_user.full_name)
+    
+    # Calculate today's total revenue for WebSocket broadcast
+    today = date.today()
+    query = db.query(func.sum(models.Sale.total_amount)).filter(
+        func.date(models.Sale.created_at) == today
+    )
+    if manager.last_cleared_timestamp:
+        query = query.filter(models.Sale.created_at >= manager.last_cleared_timestamp)
+        
+    today_revenue = query.scalar() or 0.0
+
+    await manager.broadcast({
+        "type": "INVOICE_CREATED",
+        "cashierName": current_user.username,
+        "amount": float(total_amount),
+        "totalRevenue": float(today_revenue)
+    })
     
     return {
         "sale_id": new_sale.id,

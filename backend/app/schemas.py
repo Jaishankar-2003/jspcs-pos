@@ -57,7 +57,15 @@ class ProductCreate(BaseModel):
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
+    barcode: Optional[str] = None
+    category: Optional[str] = None
+    subCategory: Optional[str] = Field(None, alias="subCategory")
+    brand: Optional[str] = None
+    unitOfMeasure: Optional[str] = Field(None, alias="unitOfMeasure")
     sellingPrice: Optional[Decimal] = Field(None, alias="sellingPrice")
+    gstRate: Optional[Decimal] = Field(None, alias="gstRate")
+    hsnCode: Optional[str] = Field(None, alias="hsnCode")
+    isTaxable: Optional[bool] = Field(None, alias="isTaxable")
     low_stock_threshold: Optional[int] = None
     is_active: Optional[bool] = None
     
@@ -146,3 +154,6 @@ class SubCategoryResponse(BaseModel):
     name: str
     categoryId: UUID = Field(..., validation_alias="category_id", serialization_alias="categoryId")
     model_config = ConfigDict(from_attributes=True)
+
+class BulkDeleteRequest(BaseModel):
+    ids: List[UUID]

@@ -18,14 +18,19 @@ def get_password_hash(password):
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
+from app.websocket_manager import manager
+
 @router.post("/login", response_model=schemas.TokenResponse)
-def login(request: schemas.LoginRequest, db: Session = Depends(get_db)):
+async def login(request: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.username == request.username).first()
     if not user or not verify_password(request.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     
     token = secrets.token_hex(32)
     sessions[token] = user.id
+    
+    # Broadcast login event
+    await manager.user_login(user.id, user.username, user.role)
     
     return {
         "token": token,
@@ -37,9 +42,11 @@ def login(request: schemas.LoginRequest, db: Session = Depends(get_db)):
     }
 
 @router.post("/logout")
-def logout(token: str = Depends(oauth2_scheme)):
+async def logout(token: str = Depends(oauth2_scheme)):
     if token in sessions:
+        user_id = sessions[token]
         del sessions[token]
+        await manager.user_logout(user_id)
     return {"message": "Logged out successfully"}
 
 # Dependency to get current user

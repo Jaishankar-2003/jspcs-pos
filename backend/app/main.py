@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routes import auth, products, sales, users, admin, masters
+from app.routes import auth, products, sales, users, admin, masters, dashboard
 import os
 
 # Create tables (we are using schema.sql in docker, but this ensures they exist if run locally with sqlite)
@@ -28,6 +28,7 @@ app.include_router(sales.router, prefix="/api/sales", tags=["Sales & Billing"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(masters.router, prefix="/api/masters", tags=["Master Data"])
+app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 
 @app.get("/")
 def root():
