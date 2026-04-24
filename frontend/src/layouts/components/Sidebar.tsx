@@ -5,14 +5,18 @@ import {
     Users,
     FileText,
     Settings,
-    ShoppingCart
+    ShoppingCart,
+    Boxes,
+    Tag
 } from 'lucide-react';
 import { cn } from '@/utils/utils';
 
 const adminNavItems = [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
     { label: 'Products', icon: Package, href: '/admin/products' },
+    { label: 'Inventory', icon: Boxes, href: '/admin/inventory' },
     { label: 'Users', icon: Users, href: '/admin/users' },
+    { label: 'Categories & Units', icon: Tag, href: '/admin/masters' },
     { label: 'Reports', icon: FileText, href: '/admin/reports' },
     { label: 'Settings', icon: Settings, href: '/admin/settings' },
 ];
@@ -29,7 +33,7 @@ export const Sidebar = () => {
                 </Link>
             </div>
             <div className="flex-1">
-                <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-4 gap-1">
+                <nav className="grid items-start px-2 text-base font-bold lg:px-4 py-4 gap-1">
                     {adminNavItems.map((item) => (
                         <Link
                             key={item.href}

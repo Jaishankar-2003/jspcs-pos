@@ -18,4 +18,19 @@ export const productsApi = {
         const { data } = await api.post<Product>('/products', product);
         return data;
     },
+    update: async (id: string, product: Partial<Product>): Promise<Product> => {
+        const { data } = await api.put<Product>(`/products/${id}`, product);
+        return data;
+    },
+    updateStock: async (id: string, quantity: number): Promise<Product> => {
+        const { data } = await api.put<Product>(`/products/${id}/stock`, { quantity });
+        return data;
+    },
+    delete: async (id: string): Promise<void> => {
+        await api.delete(`/products/${id}`);
+    },
+    deleteBulk: async (ids: string[]): Promise<any> => {
+        const { data } = await api.post('/products/bulk-delete', { ids });
+        return data;
+    },
 };

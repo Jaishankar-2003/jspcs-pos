@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     BarChart3,
     TrendingUp,
@@ -6,15 +7,79 @@ import {
     Download,
     Calendar as CalendarIcon,
     ChevronDown,
-    ArrowUpRight,
-    ArrowDownRight
+    Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { StatsCard } from '@/components/ui/StatsCard';
+import { salesApi } from '@/api/sales';
+import type { InvoiceResponse } from '@/types';
 
 export const ReportsPage = () => {
-    const dateRange = 'Last 30 Days';
+    const [dateRange] = useState('All Time');
+    const [stats, setStats] = useState({
+        totalRevenue: 0,
+        totalSales: 0,
+        avgTicket: 0,
+        netProfit: 0 // Estimated
+    });
+    const [categorySales, setCategorySales] = useState<{ name: string, value: string, per: number }[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                setLoading(true);
+                const invoices: InvoiceResponse[] = await salesApi.getAll();
+
+                // Calculate Totals
+                const revenue = invoices.reduce((acc, inv) => acc + (inv.grandTotal || 0), 0);
+                const salesCount = invoices.length;
+                const avgTicket = salesCount > 0 ? revenue / salesCount : 0;
+                const profit = revenue * 0.2; // Estimated 20% margin
+
+                setStats({
+                    totalRevenue: revenue,
+                    totalSales: salesCount,
+                    avgTicket,
+                    netProfit: profit
+                });
+
+                // Calculate Top Categories
+                const catMap: Record<string, number> = {};
+                invoices.forEach(inv => {
+                    inv.items.forEach(item => {
+                        const cat = item.category || 'Uncategorized';
+                        catMap[cat] = (catMap[cat] || 0) + item.finalAmount;
+                    });
+                });
+
+                const sortedCats = Object.entries(catMap)
+                    .map(([name, val]) => ({ name, val }))
+                    .sort((a, b) => b.val - a.val)
+                    .slice(0, 5);
+
+                const totalCatSales = sortedCats.reduce((acc, c) => acc + c.val, 0);
+
+                setCategorySales(sortedCats.map(c => ({
+                    name: c.name,
+                    value: `₹${(c.val / 1000).toFixed(1)}k`,
+                    per: totalCatSales > 0 ? (c.val / totalCatSales) * 100 : 0
+                })));
+
+            } catch (error) {
+                console.error("Failed to load report data", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, []);
+
+    if (loading) {
+        return <div className="flex h-96 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+    }
 
     return (
         <div className="space-y-6">
@@ -39,31 +104,31 @@ export const ReportsPage = () => {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatsCard
                     title="Total Revenue"
-                    value="₹12,45,850"
+                    value={`₹${stats.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                     icon={DollarSign}
-                    description="+12.5% from last period"
-                    trend={{ value: 12.5, isPositive: true }}
+                    description="Gross revenue"
+                    trend={{ value: 0, isPositive: true }}
                 />
                 <StatsCard
                     title="Total Sales"
-                    value="4,850"
+                    value={stats.totalSales.toString()}
                     icon={ShoppingBag}
-                    description="+5.2% from last period"
-                    trend={{ value: 5.2, isPositive: true }}
+                    description="Invoices generated"
+                    trend={{ value: 0, isPositive: true }}
                 />
                 <StatsCard
                     title="Avg. Ticket Size"
-                    value="₹256"
+                    value={`₹${stats.avgTicket.toFixed(0)}`}
                     icon={TrendingUp}
-                    description="-1.4% from last period"
-                    trend={{ value: 1.4, isPositive: false }}
+                    description="Per transaction"
+                    trend={{ value: 0, isPositive: false }}
                 />
                 <StatsCard
-                    title="Net Profit"
-                    value="₹3,12,000"
+                    title="Est. Net Profit"
+                    value={`₹${stats.netProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                     icon={BarChart3}
-                    description="+8.3% from last period"
-                    trend={{ value: 8.3, isPositive: true }}
+                    description="Estimated @ 20%"
+                    trend={{ value: 0, isPositive: true }}
                 />
             </div>
 
@@ -71,12 +136,12 @@ export const ReportsPage = () => {
                 <Card className="lg:col-span-4">
                     <CardHeader>
                         <CardTitle>Revenue Over Time</CardTitle>
-                        <CardDescription>Daily revenue trends for the selected period.</CardDescription>
+                        <CardDescription>Daily revenue trends.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px] flex items-center justify-center border border-dashed rounded-lg mx-6 mb-6">
                         <div className="text-center text-muted-foreground">
                             <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                            <p>Revenue chart visualizing data across {dateRange}</p>
+                            <p>Chart visualization coming soon (requires charting lib)</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -88,57 +153,25 @@ export const ReportsPage = () => {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {[
-                                { name: "Beverages", value: "₹4.2L", per: 75 },
-                                { name: "Bakery", value: "₹2.8L", per: 60 },
-                                { name: "Snacks", value: "₹1.5L", per: 45 },
-                                { name: "Dairy", value: "1.2L", per: 30 }
-                            ].map((cat, i) => (
-                                <div key={i} className="space-y-1.5">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="font-medium">{cat.name}</span>
-                                        <span className="text-muted-foreground">{cat.value}</span>
+                            {categorySales.length === 0 ? <p className="text-muted-foreground text-center">No sales data yet.</p> :
+                                categorySales.map((cat, i) => (
+                                    <div key={i} className="space-y-1.5">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="font-medium">{cat.name}</span>
+                                            <span className="text-muted-foreground">{cat.value}</span>
+                                        </div>
+                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-primary transition-all duration-500"
+                                                style={{ width: `${cat.per}%` }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-primary transition-all duration-500"
-                                            style={{ width: `${cat.per}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
                         </div>
                     </CardContent>
                 </Card>
             </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Recent Highlights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div className="flex items-start gap-4 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                            <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-600">
-                                <ArrowUpRight className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <h4 className="font-bold">Peak Sales Achievement</h4>
-                                <p className="text-sm text-muted-foreground">Your sales on Sunday reached ₹1.2L, which is 25% higher than average weekends.</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
-                            <div className="p-2 bg-amber-500/20 rounded-lg text-amber-600">
-                                <ArrowDownRight className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <h4 className="font-bold">Inventory Alert</h4>
-                                <p className="text-sm text-muted-foreground">3 high-velocity items are nearing low-stock levels. Consider restocking soon.</p>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 };

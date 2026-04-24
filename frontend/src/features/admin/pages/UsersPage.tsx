@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     UserPlus,
     Search,
     Shield,
     UserCheck,
     UserX,
-    MoreVertical,
-    Mail
+    Edit,
+    Trash2,
+    Mail,
+    Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
@@ -14,22 +16,117 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { cn } from '@/utils/utils';
 import { Modal } from '@/components/ui/Modal';
+import { usersApi } from '@/api/users';
+import toast from 'react-hot-toast';
+import type { CreateUserRequest, UserResponse } from '@/api/users';
 
 export const UsersPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
+    const [users, setUsers] = useState<UserResponse[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [roles, setRoles] = useState<any[]>([]);
+    const [counters, setCounters] = useState<any[]>([]);
 
-    // Mock user data
-    const usersData = [
-        { id: 1, name: "Admin User", username: "admin", role: "ADMIN", status: "Active", lastLogin: "10m ago", email: "admin@jspcs.com" },
-        { id: 2, name: "John Cashier", username: "cashier1", role: "CASHIER", status: "Active", lastLogin: "1h ago", email: "john@jspcs.com" },
-        { id: 3, name: "Jane Smith", username: "cashier2", role: "CASHIER", status: "Inactive", lastLogin: "2d ago", email: "jane@jspcs.com" },
-        { id: 4, name: "Super Admin", username: "super", role: "ADMIN", status: "Active", lastLogin: "Just now", email: "super@jspcs.com" },
-    ];
+    // Form State
+    const [formData, setFormData] = useState<any>({
+        username: '',
+        fullName: '',
+        roleId: '',
+        cashierCounterId: '',
+        email: '',
+        password: ''
+    });
 
-    const filteredUsers = usersData.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            const data = await usersApi.getAll();
+            setUsers(data);
+        } catch (error) {
+            console.error("Failed to fetch users", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+        const fetchMetadata = async () => {
+            try {
+                const [rolesData, countersData] = await Promise.all([
+                    usersApi.getRoles(),
+                    usersApi.getCounters()
+                ]);
+                setRoles(rolesData);
+                setCounters(countersData);
+            } catch (error) {
+                console.error("Failed to fetch metadata", error);
+            }
+        };
+        fetchMetadata();
+    }, []);
+
+    const handleOpenAdd = () => {
+        setEditingUser(null);
+        setFormData({
+            username: '',
+            fullName: '',
+            roleId: '',
+            cashierCounterId: '',
+            email: '',
+            password: ''
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEdit = (user: UserResponse) => {
+        setEditingUser(user);
+        setFormData({
+            username: user.username,
+            fullName: user.fullName || '',
+            roleId: user.role,
+            cashierCounterId: '',
+            email: user.email || '',
+            password: ''
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleSaveUser = async () => {
+        try {
+            if (editingUser) {
+                await usersApi.update(editingUser.id, formData);
+                toast.success("User updated successfully!");
+            } else {
+                await usersApi.create(formData);
+                toast.success("User created successfully!");
+            }
+            setIsModalOpen(false);
+            fetchUsers();
+        } catch (error) {
+            console.error("Failed to save user", error);
+            toast.error("Failed to save user. Please check console/logs.");
+        }
+    };
+
+    const handleDeleteUser = async (id: string) => {
+        if (window.confirm('Are you sure you want to delete this user?')) {
+            try {
+                await usersApi.delete(id);
+                fetchUsers();
+                toast.success("User deleted");
+            } catch (error) {
+                console.error("Failed to delete user", error);
+                toast.error("Failed to delete user.");
+            }
+        }
+    };
+
+    const filteredUsers = users.filter(user =>
+        user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.username?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -39,7 +136,7 @@ export const UsersPage = () => {
                     <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
                     <p className="text-muted-foreground">Manage system users, roles, and access permissions.</p>
                 </div>
-                <Button onClick={() => setIsAddUserOpen(true)}>
+                <Button onClick={handleOpenAdd}>
                     <UserPlus className="mr-2 h-4 w-4" />
                     Add New User
                 </Button>
@@ -64,96 +161,148 @@ export const UsersPage = () => {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>User</TableHead>
-                                <TableHead>Role</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Last Activity</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredUsers.map((user) => (
-                                <TableRow key={user.id}>
-                                    <TableCell>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">{user.name}</span>
-                                            <span className="text-xs text-muted-foreground">@{user.username}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-1.5">
-                                            <Shield className={cn(
-                                                "h-3.5 w-3.5",
-                                                user.role === "ADMIN" ? "text-primary" : "text-muted-foreground"
-                                            )} />
-                                            <span className="text-sm font-medium">{user.role}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <span className={cn(
-                                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border",
-                                            user.status === "Active" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                                        )}>
-                                            {user.status === "Active" ? <UserCheck className="mr-1 h-3 w-3" /> : <UserX className="mr-1 h-3 w-3" />}
-                                            {user.status}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">{user.lastLogin}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon">
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </TableCell>
+                    {loading ? (
+                        <div className="flex justify-center p-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>User</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Joined</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredUsers.map((user) => (
+                                    <TableRow key={user.id}>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">{user.fullName}</span>
+                                                <span className="text-xs text-muted-foreground">@{user.username}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-1.5">
+                                                <Shield className={cn(
+                                                    "h-3.5 w-3.5",
+                                                    user.role === "ADMIN" ? "text-primary" : "text-muted-foreground"
+                                                )} />
+                                                <span className="text-sm font-medium">{user.role}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className={cn(
+                                                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border",
+                                                user.isOnline ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                                            )}>
+                                                {user.isOnline ? <UserCheck className="mr-1 h-3 w-3" /> : <UserX className="mr-1 h-3 w-3" />}
+                                                {user.isOnline ? 'Active' : 'Logout'}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleOpenEdit(user)}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-rose-500" onClick={() => handleDeleteUser(user.id)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
             </Card>
 
             <Modal
-                isOpen={isAddUserOpen}
-                onClose={() => setIsAddUserOpen(false)}
-                title="Add New User"
-                description="Create a new system account with specific roles."
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={editingUser ? "Edit User" : "Add New User"}
+                description={editingUser ? "Update account details." : "Create a new system account."}
             >
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Full Name</label>
-                            <Input placeholder="Enter full name" />
+                            <Input
+                                placeholder="Enter full name"
+                                value={formData.fullName}
+                                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                            />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Username</label>
-                            <Input placeholder="username" />
+                            <Input
+                                placeholder="username"
+                                value={formData.username}
+                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                            />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Email Address</label>
                         <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="email@example.com" className="pl-9" />
+                            <Input
+                                placeholder="email@example.com"
+                                className="pl-9"
+                                value={formData.email || ''}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            />
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Role</label>
-                            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                                <option value="CASHIER">Cashier</option>
-                                <option value="ADMIN">Admin</option>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                value={formData.roleId}
+                                onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+                            >
+                                <option value="">Select Role</option>
+                                {roles.map(r => (
+                                    <option key={r.id} value={r.id}>{r.name}</option>
+                                ))}
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Initial Password</label>
-                            <Input type="password" placeholder="••••••••" />
+                            <label className="text-sm font-medium">Cashier Counter (Optional)</label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                value={formData.cashierCounterId}
+                                onChange={(e) => setFormData({ ...formData, cashierCounterId: e.target.value })}
+                            >
+                                <option value="">None / Backoffice</option>
+                                {counters.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                            {editingUser ? "New Password (leave blank to keep current)" : "Initial Password"}
+                        </label>
+                        <Input
+                            type="password"
+                            placeholder="••••••••"
+                            value={formData.password || ''}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        />
+                    </div>
                     <div className="flex justify-end gap-3 pt-4">
-                        <Button variant="outline" onClick={() => setIsAddUserOpen(false)}>Cancel</Button>
-                        <Button onClick={() => setIsAddUserOpen(false)}>Create Account</Button>
+                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveUser}>{editingUser ? "Update Account" : "Create Account"}</Button>
                     </div>
                 </div>
             </Modal>
