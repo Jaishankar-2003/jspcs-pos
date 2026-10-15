@@ -4,8 +4,7 @@ import {
     Ruler,
     Plus,
     Trash2,
-    Loader2,
-    AlertCircle
+    Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';

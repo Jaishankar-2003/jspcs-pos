@@ -1,4 +1,5 @@
-import { Client, StompSubscription } from '@stomp/stompjs';
+import { Client } from '@stomp/stompjs';
+import type { StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 export interface WebSocketMessage {

@@ -232,7 +232,7 @@ export const DashboardPage = () => {
                                                 </td>
                                             </motion.tr>
                                         ) : (
-                                            cashierRevenue.map((cashier, idx) => (
+                                            cashierRevenue.map((cashier, _idx) => (
                                                 <motion.tr 
                                                     key={cashier.cashierName} 
                                                     layout

@@ -18,7 +18,7 @@ import { cn } from '@/utils/utils';
 import { Modal } from '@/components/ui/Modal';
 import { usersApi } from '@/api/users';
 import toast from 'react-hot-toast';
-import type { CreateUserRequest, UserResponse } from '@/api/users';
+import type { UserResponse } from '@/api/users';
 
 export const UsersPage = () => {
     const [searchTerm, setSearchTerm] = useState('');

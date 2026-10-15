@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 export const useInactivityLogout = (timeoutMs: number = 100000) => {
     const { logout, isAuthenticated } = useAuthStore();
     const navigate = useNavigate();
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const resetTimer = () => {
         if (timeoutRef.current) {

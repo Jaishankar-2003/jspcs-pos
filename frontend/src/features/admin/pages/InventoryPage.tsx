@@ -6,8 +6,7 @@ import {
     Search,
     RefreshCcw,
     Loader2,
-    Settings2,
-    Filter
+    Settings2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';

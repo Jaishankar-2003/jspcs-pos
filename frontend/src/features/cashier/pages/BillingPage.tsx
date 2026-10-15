@@ -168,7 +168,7 @@ export const BillingPage = () => {
             setProducts([...products, savedProduct]);
 
             setIsAddModalOpen(false);
-            setNewProduct({ name: '', category: '', price: '', stock: '1', unit: 'unit' });
+            setNewProduct({ name: '', category: '', subCategory: '', price: '', stock: '1', unit: 'unit' });
             toast.success("Product added and added to cart!");
         } catch (error) {
             console.error("Failed to add product", error);

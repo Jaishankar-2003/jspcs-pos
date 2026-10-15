@@ -19,6 +19,7 @@ export interface Product {
     barcode: string;
     name: string;
     category: string;
+    subCategory?: string;
     brand: string;
     unitOfMeasure: string;
     sellingPrice: number;
@@ -28,6 +29,7 @@ export interface Product {
     currentStock: number;
     availableStock: number;
     isActive: boolean;
+    low_stock_threshold?: number;
 }
 
 export interface CartItem extends Product {

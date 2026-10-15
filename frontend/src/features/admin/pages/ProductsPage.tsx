@@ -5,8 +5,6 @@ import {
     Edit,
     Trash2,
     Package,
-    AlertCircle,
-    FileDown,
     FileUp,
     Loader2,
     Download,
