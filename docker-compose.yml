@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: jspcs_db
+    environment:
+      POSTGRES_USER: jspcs
+      POSTGRES_PASSWORD: jspcs_password
+      POSTGRES_DB: jspcs_pos
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: jspcs_backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://jspcs:jspcs_password@db:5432/jspcs_pos
+    volumes:
+      - ./backend:/app
+      - ./backend/invoices:/app/invoices
+    restart: unless-stopped
+
+volumes:
+  pgdata:
