@@ -294,16 +294,33 @@ export const ShiftsPage = () => {
             >
                 {currentShift && (
                     <div className="space-y-4 pt-2">
-                        <div className="p-3 bg-muted/40 rounded-lg flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Expected Cash in Drawer:</span>
-                            <span className="font-bold text-lg text-primary">₹{Number(currentShift.closingCashExpected || 0).toLocaleString()}</span>
+                        <div className="bg-muted/40 p-3.5 rounded-xl space-y-1.5 text-sm border">
+                            <div className="flex justify-between items-center text-muted-foreground text-xs">
+                                <span>Opening Cash Float:</span>
+                                <span className="font-medium text-foreground">₹{Number(currentShift.openingCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-muted-foreground text-xs">
+                                <span>+ Cash Sales on Shift:</span>
+                                <span className="text-emerald-600 font-semibold">+₹{Number(currentShift.cashSales).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            {Number(currentShift.refundTotal || 0) > 0 && (
+                                <div className="flex justify-between items-center text-muted-foreground text-xs">
+                                    <span>- Cash Refunds Issued:</span>
+                                    <span className="text-rose-600 font-semibold">-₹{Number(currentShift.refundTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </div>
+                            )}
+                            <div className="border-t pt-2 flex justify-between items-center font-bold text-sm">
+                                <span className="text-foreground">Expected Cash in Drawer:</span>
+                                <span className="text-primary font-black text-xl">₹{Number(currentShift.closingCashExpected || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
                         </div>
 
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium">Actual Counted Cash (₹) *</label>
                             <Input
                                 type="number"
-                                placeholder="Enter physical cash in drawer..."
+                                step="0.01"
+                                placeholder="Enter physical cash in drawer (e.g. 1141.60)..."
                                 value={actualCashInput}
                                 onChange={(e) => setActualCashInput(e.target.value)}
                                 className="text-xl font-bold h-12"
@@ -312,11 +329,12 @@ export const ShiftsPage = () => {
                         </div>
 
                         {actualCashInput && (
-                            <div className="flex justify-between items-center p-3 border rounded-lg text-sm">
-                                <span>Difference:</span>
-                                <span className={`font-bold text-base ${parseFloat(actualCashInput) - Number(currentShift.closingCashExpected || 0) === 0 ? 'text-emerald-600' : (parseFloat(actualCashInput) - Number(currentShift.closingCashExpected || 0) > 0 ? 'text-blue-600' : 'text-rose-600')}`}>
-                                    {parseFloat(actualCashInput) - Number(currentShift.closingCashExpected || 0) >= 0 ? '+' : ''}
-                                    ₹{(parseFloat(actualCashInput) - Number(currentShift.closingCashExpected || 0)).toLocaleString()}
+                            <div className="flex justify-between items-center p-3 border rounded-lg text-sm bg-muted/20">
+                                <span className="font-medium">Cash Discrepancy (Counted - Expected):</span>
+                                <span className={`font-black text-base ${(parseFloat(actualCashInput) - Number(currentShift.closingCashExpected || 0)).toFixed(2) === '0.00' ? 'text-emerald-600' : (parseFloat(actualCashInput) - Number(currentShift.closingCashExpected || 0) > 0 ? 'text-blue-600' : 'text-rose-600')}`}>
+                                    {parseFloat(actualCashInput) - Number(currentShift.closingCashExpected || 0) > 0 ? '+' : ''}
+                                    ₹{(parseFloat(actualCashInput) - Number(currentShift.closingCashExpected || 0)).toFixed(2)}
+                                    {parseFloat(actualCashInput) - Number(currentShift.closingCashExpected || 0) > 0 ? ' (Overage)' : (parseFloat(actualCashInput) - Number(currentShift.closingCashExpected || 0) < 0 ? ' (Shortage)' : ' (Exact / Balanced)')}
                                 </span>
                             </div>
                         )}

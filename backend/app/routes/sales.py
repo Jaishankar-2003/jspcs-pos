@@ -76,11 +76,15 @@ async def checkout(
     total_tax = Decimal("0.00")
     sale_items_data = []
 
-    # Check for active cashier shift
+    # Check for active cashier shift (first by current user, then fallback to any open shift on register)
     active_shift = db.query(models.CashierShift).filter(
         models.CashierShift.cashier_id == current_user.id,
         models.CashierShift.status == "OPEN"
     ).first()
+    if not active_shift:
+        active_shift = db.query(models.CashierShift).filter(
+            models.CashierShift.status == "OPEN"
+        ).order_by(models.CashierShift.opened_at.desc()).first()
 
     # Process items and lock stock records with_for_update()
     for item in request.items:

@@ -17,10 +17,11 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { cn } from '@/utils/utils';
 import { useCartStore } from '@/store/cartSlice';
-import type { Product } from '@/types';
+import type { Product, CashierShift } from '@/types';
 import { productsApi } from '@/api/products';
 import { usersApi } from '@/api/users';
 import { salesApi } from '@/api/sales';
+import { shiftsApi } from '@/api/shifts';
 import { Modal } from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -36,6 +37,7 @@ export const BillingPage = () => {
     const [customerName, setCustomerName] = useState('');
     const [discountPercent, setDiscountPercent] = useState('0');
     const [discountReason] = useState('');
+    const [activeShift, setActiveShift] = useState<CashierShift | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [newProduct, setNewProduct] = useState({
         name: '',
@@ -102,6 +104,29 @@ export const BillingPage = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
+    const fetchActiveShift = async () => {
+        try {
+            const cur = await shiftsApi.getCurrent();
+            setActiveShift(cur);
+        } catch {
+            setActiveShift(null);
+        }
+    };
+
+    useEffect(() => {
+        fetchActiveShift();
+    }, []);
+
+    const handleQuickStartShift = async () => {
+        try {
+            const opened = await shiftsApi.openShift(1000, "Counter Quick Start");
+            setActiveShift(opened);
+            toast.success("Cashier Shift opened with ₹1,000 float!");
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || "Failed to start shift");
+        }
+    };
+
     const handleProductSelect = (product: Product) => {
         addItem(product);
         setSearchTerm('');
@@ -137,6 +162,7 @@ export const BillingPage = () => {
             setAmountGiven('');
             setCustomerName('');
             setShowCalculator(false);
+            fetchActiveShift();
             toast.success("Checkout Successful! Invoice Created.");
         } catch (error) {
             console.error("Checkout Failed", error);
@@ -195,9 +221,26 @@ export const BillingPage = () => {
                             </div>
                             <CardTitle>Current Order</CardTitle>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={clearCart} className="text-muted-foreground hover:text-rose-500">
-                            Clear All
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {activeShift ? (
+                                <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 rounded-full text-xs font-semibold">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span>Shift Active (Float: ₹{Number(activeShift.openingCash).toLocaleString()})</span>
+                                </div>
+                            ) : (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleQuickStartShift}
+                                    className="text-amber-600 border-amber-500/30 hover:bg-amber-500/10 text-xs h-7"
+                                >
+                                    ⚠️ Start Shift (Float ₹1,000)
+                                </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={clearCart} className="text-muted-foreground hover:text-rose-500">
+                                Clear All
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent className="flex-1 overflow-y-auto min-h-0 space-y-4">
                         {items.length === 0 ? (

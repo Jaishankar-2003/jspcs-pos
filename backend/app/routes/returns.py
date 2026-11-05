@@ -61,11 +61,15 @@ def create_sales_return(
             pid = str(pr_item.product_id)
             already_returned_quantities[pid] = already_returned_quantities.get(pid, 0) + pr_item.quantity
 
-    # Check for active cashier shift
+    # Check for active cashier shift (first by current user, then fallback to any open shift on register)
     active_shift = db.query(models.CashierShift).filter(
         models.CashierShift.cashier_id == current_user.id,
         models.CashierShift.status == "OPEN"
     ).first()
+    if not active_shift:
+        active_shift = db.query(models.CashierShift).filter(
+            models.CashierShift.status == "OPEN"
+        ).order_by(models.CashierShift.opened_at.desc()).first()
 
     total_refund = Decimal("0.00")
     return_num = f"RET-{datetime.now().strftime('%Y%m%d')}-{models.generate_uuid()[:6].upper()}"

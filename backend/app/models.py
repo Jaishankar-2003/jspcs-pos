@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy import Column, String, Integer, Boolean, Numeric, ForeignKey, DateTime, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, foreign
 from sqlalchemy.sql import func
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -8,20 +8,22 @@ from app.database import Base
 
 class GUID(TypeDecorator):
     """Platform-independent GUID type.
-    Uses PostgreSQL's UUID type, otherwise uses CHAR(36).
+    Uses PostgreSQL's native UUID type, otherwise uses CHAR(36) with hyphens on SQLite.
     """
-    impl = CHAR
+    impl = PG_UUID
     cache_ok = True
 
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":
-            return dialect.type_descriptor(PG_UUID(as_uuid=False))
+            return dialect.type_descriptor(PG_UUID(as_uuid=True))
         else:
             return dialect.type_descriptor(CHAR(36))
 
     def process_bind_param(self, value, dialect):
         if value is None:
             return value
+        if dialect.name == "postgresql":
+            return uuid.UUID(str(value)) if not isinstance(value, uuid.UUID) else value
         return str(value)
 
     def process_result_value(self, value, dialect):

@@ -10,11 +10,12 @@ class TestJSPCSPOS(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         init_db()
-        cls.db = SessionLocal()
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.db.close()
+    def setUp(self):
+        self.db = SessionLocal()
+
+    def tearDown(self):
+        self.db.close()
 
     def test_01_auth_login(self):
         # Test admin login
@@ -122,6 +123,13 @@ class TestJSPCSPOS(unittest.TestCase):
 
     def test_04_cashier_shift_workflow(self):
         cashier = self.db.query(models.User).filter(models.User.username == "cashier").first()
+
+        # Clean state: close any lingering open shift
+        self.db.query(models.CashierShift).filter(
+            models.CashierShift.cashier_id == cashier.id,
+            models.CashierShift.status == "OPEN"
+        ).update({"status": "CLOSED"})
+        self.db.commit()
 
         # Open shift
         open_req = schemas.ShiftOpenRequest(openingCash=Decimal("1000.00"), notes="Morning Shift")
