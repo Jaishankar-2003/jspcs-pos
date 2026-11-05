@@ -8,12 +8,16 @@ import { PrivateRoute } from '@/router/PrivateRoute';
 import { DashboardPage } from '@/features/admin/pages/DashboardPage';
 import { ProductsPage } from '@/features/admin/pages/ProductsPage';
 import { InventoryPage } from '@/features/admin/pages/InventoryPage';
+import { SuppliersPage } from '@/features/admin/pages/SuppliersPage';
+import { PurchasesPage } from '@/features/admin/pages/PurchasesPage';
 import { UsersPage } from '@/features/admin/pages/UsersPage';
 import { ReportsPage } from '@/features/admin/pages/ReportsPage';
 import { SettingsPage } from '@/features/admin/pages/SettingsPage';
 import { MasterDataPage } from '@/features/admin/pages/MasterDataPage';
 import { BillingPage } from '@/features/cashier/pages/BillingPage';
 import { InvoiceHistoryPage } from '@/features/cashier/pages/InvoiceHistoryPage';
+import { ReturnsPage } from '@/features/shared/pages/ReturnsPage';
+import { ShiftsPage } from '@/features/shared/pages/ShiftsPage';
 
 export default function App() {
   return (
@@ -30,10 +34,14 @@ export default function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="inventory" element={<InventoryPage />} />
+            <Route path="suppliers" element={<SuppliersPage />} />
+            <Route path="purchases" element={<PurchasesPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="masters" element={<MasterDataPage />} />
             <Route path="history" element={<InvoiceHistoryPage />} />
+            <Route path="returns" element={<ReturnsPage />} />
+            <Route path="shifts" element={<ShiftsPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Route>
@@ -44,6 +52,8 @@ export default function App() {
             <Route index element={<Navigate to="billing" replace />} />
             <Route path="billing" element={<BillingPage />} />
             <Route path="history" element={<InvoiceHistoryPage />} />
+            <Route path="shift" element={<ShiftsPage />} />
+            <Route path="returns" element={<ReturnsPage />} />
           </Route>
         </Route>
 
@@ -54,7 +64,7 @@ export default function App() {
       <Toaster 
         position="top-right" 
         toastOptions={{
-          duration: 1000,
+          duration: 2000,
           style: {
             background: '#333',
             color: '#fff',

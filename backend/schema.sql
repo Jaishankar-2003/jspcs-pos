@@ -1,6 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
@@ -11,14 +11,48 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS user_sessions (
+    token VARCHAR(100) PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS system_settings (
+    key VARCHAR(100) PRIMARY KEY,
+    value TEXT NOT NULL,
+    description VARCHAR(255),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS sub_categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    category_id UUID NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS units (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sku VARCHAR(50) NOT NULL UNIQUE,
     barcode VARCHAR(50),
     name VARCHAR(200) NOT NULL,
     category VARCHAR(100),
+    sub_category VARCHAR(100),
     brand VARCHAR(100),
     unit_of_measure VARCHAR(50),
+    cost_price DECIMAL(10, 2) DEFAULT 0.00,
     price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
     gst_rate DECIMAL(5, 2) DEFAULT 0,
     hsn_code VARCHAR(20),
@@ -27,25 +61,152 @@ CREATE TABLE products (
     is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE stock (
+CREATE TABLE IF NOT EXISTS stock (
     product_id UUID PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
     quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0)
 );
 
-CREATE TABLE sales (
+CREATE TABLE IF NOT EXISTS stock_movements (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    cashier_id UUID REFERENCES users(id),
-    total_amount DECIMAL(10, 2) NOT NULL CHECK (total_amount >= 0),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    movement_type VARCHAR(50) NOT NULL,
+    previous_quantity INTEGER NOT NULL,
+    quantity_changed INTEGER NOT NULL,
+    new_quantity INTEGER NOT NULL,
+    reference_type VARCHAR(50),
+    reference_id VARCHAR(100),
+    reason VARCHAR(255),
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE sale_items (
+CREATE TABLE IF NOT EXISTS suppliers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(200) NOT NULL,
+    contact_person VARCHAR(100),
+    phone VARCHAR(50),
+    email VARCHAR(100),
+    address VARCHAR(500),
+    gstin VARCHAR(50),
+    notes TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS purchases (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    purchase_number VARCHAR(50) NOT NULL UNIQUE,
+    supplier_id UUID NOT NULL REFERENCES suppliers(id),
+    status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
+    total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    tax_amount DECIMAL(10, 2) DEFAULT 0.00,
+    discount_amount DECIMAL(10, 2) DEFAULT 0.00,
+    notes TEXT,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    received_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE IF NOT EXISTS purchase_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    purchase_id UUID NOT NULL REFERENCES purchases(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES products(id),
+    ordered_quantity INTEGER NOT NULL,
+    received_quantity INTEGER DEFAULT 0,
+    damaged_quantity INTEGER DEFAULT 0,
+    unit_cost DECIMAL(10, 2) NOT NULL,
+    tax_rate DECIMAL(5, 2) DEFAULT 0.00,
+    discount_percent DECIMAL(5, 2) DEFAULT 0.00,
+    line_total DECIMAL(10, 2) NOT NULL,
+    batch_number VARCHAR(100),
+    expiry_date TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE IF NOT EXISTS product_batches (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    batch_number VARCHAR(100) NOT NULL,
+    purchase_item_id UUID REFERENCES purchase_items(id) ON DELETE SET NULL,
+    mfg_date TIMESTAMP WITH TIME ZONE,
+    expiry_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    cost_price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    selling_price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    initial_quantity INTEGER NOT NULL,
+    current_quantity INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cashier_shifts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    cashier_id UUID NOT NULL REFERENCES users(id),
+    status VARCHAR(20) DEFAULT 'OPEN',
+    opened_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    closed_at TIMESTAMP WITH TIME ZONE,
+    opening_cash DECIMAL(10, 2) DEFAULT 0.00,
+    closing_cash_actual DECIMAL(10, 2),
+    closing_cash_expected DECIMAL(10, 2),
+    cash_difference DECIMAL(10, 2),
+    cash_sales DECIMAL(10, 2) DEFAULT 0.00,
+    card_sales DECIMAL(10, 2) DEFAULT 0.00,
+    upi_sales DECIMAL(10, 2) DEFAULT 0.00,
+    refund_total DECIMAL(10, 2) DEFAULT 0.00,
+    notes VARCHAR(500)
+);
+
+CREATE TABLE IF NOT EXISTS sales (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    invoice_number VARCHAR(50),
+    cashier_id UUID REFERENCES users(id),
+    shift_id UUID REFERENCES cashier_shifts(id) ON DELETE SET NULL,
+    total_amount DECIMAL(10, 2) NOT NULL CHECK (total_amount >= 0),
+    subtotal DECIMAL(10, 2) DEFAULT 0.00,
+    tax_amount DECIMAL(10, 2) DEFAULT 0.00,
+    discount_amount DECIMAL(10, 2) DEFAULT 0.00,
+    discount_percent DECIMAL(5, 2) DEFAULT 0.00,
+    discount_reason VARCHAR(255),
+    payment_mode VARCHAR(50),
+    customer_name VARCHAR(100),
+    customer_phone VARCHAR(50),
+    notes VARCHAR(500),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sale_items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sale_id UUID REFERENCES sales(id) ON DELETE CASCADE,
     product_id UUID REFERENCES products(id),
+    batch_id UUID REFERENCES product_batches(id) ON DELETE SET NULL,
     quantity INTEGER NOT NULL CHECK (quantity > 0),
     unit_price DECIMAL(10, 2) NOT NULL,
+    unit_cost DECIMAL(10, 2) DEFAULT 0.00,
+    discount_amount DECIMAL(10, 2) DEFAULT 0.00,
+    tax_amount DECIMAL(10, 2) DEFAULT 0.00,
     subtotal DECIMAL(10, 2) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sales_returns (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    return_number VARCHAR(50) NOT NULL UNIQUE,
+    sale_id UUID NOT NULL REFERENCES sales(id),
+    cashier_id UUID REFERENCES users(id),
+    shift_id UUID REFERENCES cashier_shifts(id) ON DELETE SET NULL,
+    refund_mode VARCHAR(50) DEFAULT 'CASH',
+    total_refund_amount DECIMAL(10, 2) NOT NULL,
+    return_reason VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sales_return_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    return_id UUID NOT NULL REFERENCES sales_returns(id) ON DELETE CASCADE,
+    sale_item_id UUID REFERENCES sale_items(id),
+    product_id UUID NOT NULL REFERENCES products(id),
+    batch_id UUID REFERENCES product_batches(id) ON DELETE SET NULL,
+    quantity INTEGER NOT NULL,
+    unit_price DECIMAL(10, 2) NOT NULL,
+    refund_subtotal DECIMAL(10, 2) NOT NULL,
+    condition VARCHAR(50) DEFAULT 'SELLABLE'
 );
 
 -- Default login accounts (bcrypt via passlib)
@@ -53,4 +214,5 @@ CREATE TABLE sale_items (
 -- cashier / cashier123
 INSERT INTO users (username, password_hash, role, full_name) VALUES
     ('admin', '$2b$12$Cz0lbWhdpkrxV/SpPhRca.QDhp7RZV025BS4oODgpqjCUoHyXXtZS', 'ADMIN', 'Administrator'),
-    ('cashier', '$2b$12$l39m48bA3pYR/GPMgXSuO.vJ7vjOYwBiQFsaveUm52I22qmCLEL3O', 'CASHIER', 'Cashier');
+    ('cashier', '$2b$12$l39m48bA3pYR/GPMgXSuO.vJ7vjOYwBiQFsaveUm52I22qmCLEL3O', 'CASHIER', 'Cashier')
+ON CONFLICT (username) DO NOTHING;

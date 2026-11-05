@@ -1,6 +1,6 @@
 from fastapi import WebSocket
 from typing import List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 class ConnectionManager:
     def __init__(self):
@@ -46,7 +46,7 @@ class ConnectionManager:
             "userId": user_id,
             "username": username,
             "role": role,
-            "loginTime": datetime.utcnow().isoformat(),
+            "loginTime": datetime.now(timezone.utc).isoformat(),
             "status": "ONLINE"
         }
         await self.broadcast({
@@ -66,7 +66,7 @@ class ConnectionManager:
         return list(self.active_users.values())
 
     async def clear_revenue(self):
-        from datetime import datetime, timezone
+        from datetime import datetime, timezone, timezone
         self.last_cleared_timestamp = datetime.now(timezone.utc)
         await self.broadcast({
             "type": "REVENUE_CLEARED"

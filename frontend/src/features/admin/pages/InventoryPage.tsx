@@ -2,44 +2,85 @@ import { useState, useEffect } from 'react';
 import {
     Package,
     AlertTriangle,
-    ArrowUpRight,
     Search,
-    RefreshCcw,
     Loader2,
-    Settings2
+    ArrowDownRight,
+    ArrowUpRight,
+    History,
+    Boxes,
+    Clock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { cn } from '@/utils/utils';
 import { StatsCard } from '@/components/ui/StatsCard';
-import { productsApi } from '@/api/products';
 import { Modal } from '@/components/ui/Modal';
-import type { Product } from '@/types';
+import { productsApi } from '@/api/products';
+import { inventoryApi } from '@/api/inventory';
+import type { Product, StockMovement, ProductBatch } from '@/types';
 import toast from 'react-hot-toast';
 
 export const InventoryPage = () => {
+    const [activeTab, setActiveTab] = useState<'stock' | 'ledger' | 'batches'>('stock');
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all'); // all, low, out, instock
+    const [statusFilter, setStatusFilter] = useState('all');
     const [products, setProducts] = useState<Product[]>([]);
+    const [movements, setMovements] = useState<StockMovement[]>([]);
+    const [batches, setBatches] = useState<ProductBatch[]>([]);
+    const [valuation, setValuation] = useState<{
+        totalProducts: number;
+        totalStockUnits: number;
+        costValuation: number;
+        retailValuation: number;
+        potentialMargin: number;
+    } | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Adjust Stock modal
     const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [newStock, setNewStock] = useState('');
     const [newThreshold, setNewThreshold] = useState('');
+    const [adjustReason, setAdjustReason] = useState('Manual physical count adjustment');
+    const [savingAdjust, setSavingAdjust] = useState(false);
+
+    // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
     const fetchInventory = async () => {
         try {
             setLoading(true);
-            const data = await productsApi.getAll();
-            setProducts(data);
+            const [prodData, valData] = await Promise.all([
+                productsApi.getAll(),
+                inventoryApi.getValuation()
+            ]);
+            setProducts(prodData);
+            setValuation(valData);
         } catch (error) {
             console.error("Failed to fetch inventory", error);
+            toast.error("Failed to load inventory");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchMovements = async () => {
+        try {
+            const data = await inventoryApi.getMovements({ limit: 100 });
+            setMovements(data);
+        } catch (error) {
+            console.error("Failed to load ledger", error);
+        }
+    };
+
+    const fetchBatches = async () => {
+        try {
+            const data = await inventoryApi.getBatches('all');
+            setBatches(data);
+        } catch (error) {
+            console.error("Failed to load batches", error);
         }
     };
 
@@ -47,16 +88,23 @@ export const InventoryPage = () => {
         fetchInventory();
     }, []);
 
+    useEffect(() => {
+        if (activeTab === 'ledger') fetchMovements();
+        if (activeTab === 'batches') fetchBatches();
+    }, [activeTab]);
+
     const handleOpenAdjust = (product: Product) => {
         setSelectedProduct(product);
         setNewStock(product.currentStock?.toString() || '0');
         setNewThreshold(product.low_stock_threshold?.toString() || '10');
+        setAdjustReason('Manual physical count adjustment');
         setIsAdjustModalOpen(true);
     };
 
     const handleUpdateStock = async () => {
         if (!selectedProduct) return;
         try {
+            setSavingAdjust(true);
             await productsApi.updateStock(selectedProduct.id, parseInt(newStock));
             if (parseInt(newThreshold) !== selectedProduct.low_stock_threshold) {
                 await productsApi.update(selectedProduct.id, {
@@ -65,10 +113,12 @@ export const InventoryPage = () => {
             }
             setIsAdjustModalOpen(false);
             fetchInventory();
-            toast.success('Inventory updated successfully!');
+            toast.success('Inventory stock updated and logged in ledger!');
         } catch (error) {
             console.error("Failed to update inventory", error);
-            toast.error("Failed to update inventory.");
+            toast.error("Failed to update inventory");
+        } finally {
+            setSavingAdjust(false);
         }
     };
 
@@ -87,257 +137,315 @@ export const InventoryPage = () => {
     });
 
     const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedInventory = filteredInventory.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedInventory = filteredInventory.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    // Reset to page 1 when search or filter changes
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, statusFilter]);
-
-    const lowStockCount = products.filter(p => {
-        const t = p.low_stock_threshold || 10;
-        return (p.currentStock || 0) <= t && (p.currentStock || 0) > 0;
-    }).length;
-
+    const lowStockCount = products.filter(p => (p.currentStock || 0) <= (p.low_stock_threshold || 10) && (p.currentStock || 0) > 0).length;
     const outOfStockCount = products.filter(p => (p.currentStock || 0) <= 0).length;
-    const totalStockValue = products.reduce((acc, p) => acc + ((p.sellingPrice || 0) * (p.currentStock || 0)), 0);
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Inventory Management</h1>
-                    <p className="text-muted-foreground">Monitor stock levels and track inventory movement.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Inventory & Stock Ledger</h1>
+                    <p className="text-muted-foreground">Monitor stock levels, audit movements, track near-expiry batches, and review valuation.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={fetchInventory}>
-                        <RefreshCcw className="mr-2 h-4 w-4" />
-                        Refresh
-                    </Button>
+                    <button
+                        onClick={() => setActiveTab('stock')}
+                        className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border ${activeTab === 'stock' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
+                    >
+                        <Boxes className="h-4 w-4" /> Current Stock
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('ledger')}
+                        className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border ${activeTab === 'ledger' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
+                    >
+                        <History className="h-4 w-4" /> Movement Ledger
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('batches')}
+                        className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border ${activeTab === 'batches' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
+                    >
+                        <Clock className="h-4 w-4" /> Batches & Expiry
+                    </button>
                 </div>
             </div>
 
+            {/* Valuation KPI Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatsCard
-                    title="Total Items"
-                    value={products.length.toString()}
+                    title="Total Inventory Units"
+                    value={valuation ? Number(valuation.totalStockUnits).toLocaleString() : '0'}
                     icon={Package}
-                    description="Unique SKUs"
+                    description={`${products.length} catalog items`}
+                    trend={{ value: 0, isPositive: true }}
                 />
                 <StatsCard
-                    title="Low Stock Items"
-                    value={lowStockCount.toString()}
-                    icon={AlertTriangle}
-                    description="Action required"
-                    trend={{ value: lowStockCount, isPositive: false }}
+                    title="Cost Valuation"
+                    value={`₹${valuation ? Number(valuation.costValuation).toLocaleString() : '0'}`}
+                    icon={ArrowDownRight}
+                    description="Total purchase cost"
+                    trend={{ value: 0, isPositive: true }}
                 />
                 <StatsCard
-                    title="Out of Stock"
-                    value={outOfStockCount.toString()}
-                    icon={Package}
-                    description="Lost sales opportunity"
-                />
-                <StatsCard
-                    title="Inventory Value"
-                    value={`₹${(totalStockValue / 1000).toFixed(1)}K`}
+                    title="Retail Valuation"
+                    value={`₹${valuation ? Number(valuation.retailValuation).toLocaleString() : '0'}`}
                     icon={ArrowUpRight}
-                    description="Based on selling price"
+                    description="Total potential sales"
+                    trend={{ value: 0, isPositive: true }}
+                />
+                <StatsCard
+                    title="Stock Health Alerts"
+                    value={`${lowStockCount + outOfStockCount}`}
+                    icon={AlertTriangle}
+                    description={`${outOfStockCount} Out, ${lowStockCount} Low`}
+                    trend={{ value: 0, isPositive: false }}
                 />
             </div>
 
-            <Card>
-                <CardHeader>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <CardTitle>Inventory Overview</CardTitle>
-                            <CardDescription>Real-time stock levels across all products.</CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="relative w-64">
+            {/* TAB 1: Current Stock */}
+            {activeTab === 'stock' && (
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="relative w-72">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Search inventory..."
+                                    placeholder="Search product or SKU..."
                                     className="pl-9"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <div className="flex items-center bg-muted rounded-lg p-1">
-                                <Button
-                                    variant={statusFilter === 'all' ? 'secondary' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setStatusFilter('all')}
-                                    className="text-xs h-8 px-2"
-                                >
-                                    All
-                                </Button>
-                                <Button
-                                    variant={statusFilter === 'instock' ? 'secondary' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setStatusFilter('instock')}
-                                    className="text-xs h-8 px-2 text-emerald-500"
-                                >
-                                    In Stock
-                                </Button>
-                                <Button
-                                    variant={statusFilter === 'low' ? 'secondary' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setStatusFilter('low')}
-                                    className="text-xs h-8 px-2 text-amber-500"
-                                >
-                                    Low
-                                </Button>
-                                <Button
-                                    variant={statusFilter === 'out' ? 'secondary' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setStatusFilter('out')}
-                                    className="text-xs h-8 px-2 text-rose-500"
-                                >
-                                    Out
-                                </Button>
+                            <div className="flex items-center gap-2">
+                                {['all', 'low', 'out', 'instock'].map((f) => (
+                                    <button
+                                        key={f}
+                                        onClick={() => setStatusFilter(f)}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-lg border ${statusFilter === f ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
+                                    >
+                                        {f === 'all' ? 'All Items' : f === 'low' ? `Low Stock (${lowStockCount})` : f === 'out' ? `Out of Stock (${outOfStockCount})` : 'In Stock'}
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                        <div className="flex justify-center p-8">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : (
-                        <>
+                    </CardHeader>
+                    <CardContent>
+                        {loading ? (
+                            <div className="flex justify-center p-8">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : paginatedInventory.length === 0 ? (
+                            <p className="text-center py-8 text-muted-foreground">No matching inventory items.</p>
+                        ) : (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-16">S.No</TableHead>
                                         <TableHead>Product</TableHead>
                                         <TableHead>SKU</TableHead>
-                                        <TableHead className="text-right">Stock</TableHead>
-                                        <TableHead className="text-right">Unit</TableHead>
-                                        <TableHead className="text-right">Threshold</TableHead>
-                                        <TableHead className="text-right">Status</TableHead>
+                                        <TableHead>Category</TableHead>
+                                        <TableHead className="text-right">Unit Price</TableHead>
+                                        <TableHead className="text-right">Current Stock</TableHead>
+                                        <TableHead>Status</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {paginatedInventory.map((item, index) => {
+                                    {paginatedInventory.map((item) => {
                                         const threshold = item.low_stock_threshold || 10;
                                         const isLow = (item.currentStock || 0) <= threshold;
                                         const isOut = (item.currentStock || 0) <= 0;
 
                                         return (
                                             <TableRow key={item.id}>
-                                                <TableCell className="text-muted-foreground font-medium">
-                                                    {startIndex + index + 1}
-                                                </TableCell>
-                                                <TableCell className="font-medium">{item.name}</TableCell>
-                                                <TableCell className="font-mono text-base">{item.sku}</TableCell>
-                                                <TableCell className="text-right font-bold">
-                                                    <span className={cn(isLow ? "text-rose-500" : "text-emerald-500")}>
-                                                        {item.currentStock}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell className="text-right text-muted-foreground text-base">
-                                                    {item.unitOfMeasure}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex items-center justify-end gap-1">
-                                                        <span className="text-muted-foreground">{threshold}</span>
-                                                        <Settings2 className="h-3 w-3 text-muted-foreground opacity-50" />
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <span className={cn(
-                                                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-base font-medium border",
-                                                        !isLow && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-                                                        isLow && !isOut && "bg-amber-500/10 text-amber-500 border-amber-500/20",
-                                                        isOut && "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                                                    )}>
-                                                        {isOut ? "Out of Stock" : isLow ? "Low Stock" : "In Stock"}
+                                                <TableCell className="font-semibold">{item.name}</TableCell>
+                                                <TableCell className="font-mono text-xs">{item.sku}</TableCell>
+                                                <TableCell>{item.category || '-'}</TableCell>
+                                                <TableCell className="text-right">₹{item.sellingPrice}</TableCell>
+                                                <TableCell className="text-right font-bold text-base">{item.currentStock || 0}</TableCell>
+                                                <TableCell>
+                                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold border ${isOut ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' : isLow ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'}`}>
+                                                        {isOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock'}
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button variant="ghost" size="sm" onClick={() => handleOpenAdjust(item)}>Adjust</Button>
+                                                    <Button size="sm" variant="outline" onClick={() => handleOpenAdjust(item)}>
+                                                        Adjust Stock
+                                                    </Button>
                                                 </TableCell>
                                             </TableRow>
                                         );
                                     })}
                                 </TableBody>
                             </Table>
+                        )}
 
-                            {/* Pagination Controls */}
-                            {totalPages > 1 && (
-                                <div className="flex items-center justify-between px-2 py-4 border-t border-border mt-4">
-                                    <p className="text-sm text-muted-foreground">
-                                        Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, filteredInventory.length)}</span> of <span className="font-medium">{filteredInventory.length}</span> items
-                                    </p>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                            disabled={currentPage === 1}
-                                        >
-                                            Previous
-                                        </Button>
-                                        <div className="flex items-center gap-1">
-                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                                                <Button
-                                                    key={page}
-                                                    variant={currentPage === page ? "default" : "outline"}
-                                                    size="sm"
-                                                    className="w-8 h-8 p-0"
-                                                    onClick={() => setCurrentPage(page)}
-                                                >
-                                                    {page}
-                                                </Button>
-                                            ))}
-                                        </div>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                            disabled={currentPage === totalPages}
-                                        >
-                                            Next
-                                        </Button>
-                                    </div>
+                        {totalPages > 1 && (
+                            <div className="flex justify-between items-center pt-4 border-t text-sm">
+                                <span className="text-muted-foreground">Page {currentPage} of {totalPages}</span>
+                                <div className="flex gap-1">
+                                    <Button size="sm" variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
+                                    <Button size="sm" variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
                                 </div>
-                            )}
-                        </>
-                    )}
-                </CardContent>
-            </Card>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
+            {/* TAB 2: Movement Ledger */}
+            {activeTab === 'ledger' && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Inventory Movement Ledger</CardTitle>
+                        <CardDescription>Audited trace of all sales, purchase receipts, adjustments, returns, and damages.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {movements.length === 0 ? (
+                            <p className="text-center py-8 text-muted-foreground">No stock movements recorded yet.</p>
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Date & Time</TableHead>
+                                        <TableHead>Product</TableHead>
+                                        <TableHead>Movement Type</TableHead>
+                                        <TableHead className="text-right">Prev</TableHead>
+                                        <TableHead className="text-right">Change</TableHead>
+                                        <TableHead className="text-right">New</TableHead>
+                                        <TableHead>Reason / Reference</TableHead>
+                                        <TableHead>User</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {movements.map((m) => (
+                                        <TableRow key={m.id}>
+                                            <TableCell className="text-xs text-muted-foreground">
+                                                {new Date(m.createdAt).toLocaleString()}
+                                            </TableCell>
+                                            <TableCell className="font-semibold text-sm">
+                                                {m.productName} <span className="text-xs text-muted-foreground font-mono">({m.productSku})</span>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-muted border font-mono">
+                                                    {m.movementType}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-right text-xs text-muted-foreground">{m.previousQuantity}</TableCell>
+                                            <TableCell className="text-right font-bold">
+                                                <span className={m.quantityChanged > 0 ? 'text-emerald-600' : m.quantityChanged < 0 ? 'text-rose-600' : 'text-muted-foreground'}>
+                                                    {m.quantityChanged > 0 ? `+${m.quantityChanged}` : m.quantityChanged}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-right font-bold">{m.newQuantity}</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground">{m.reason || '-'}</TableCell>
+                                            <TableCell className="text-xs">@{m.creatorUsername || 'system'}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* TAB 3: Batches & Expiry */}
+            {activeTab === 'batches' && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Batch & Expiry Monitoring</CardTitle>
+                        <CardDescription>Track perishable items, FEFO allocation order, and upcoming expiration dates.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {batches.length === 0 ? (
+                            <p className="text-center py-8 text-muted-foreground">No product batches registered yet. Batches are created automatically upon receiving purchases.</p>
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Product</TableHead>
+                                        <TableHead>Batch #</TableHead>
+                                        <TableHead>Expiry Date</TableHead>
+                                        <TableHead className="text-right">Available Qty</TableHead>
+                                        <TableHead className="text-right">Cost Price</TableHead>
+                                        <TableHead>Expiry Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {batches.map((b) => (
+                                        <TableRow key={b.id}>
+                                            <TableCell className="font-semibold">{b.productName} <span className="text-xs text-muted-foreground font-mono">({b.productSku})</span></TableCell>
+                                            <TableCell className="font-mono text-xs">{b.batchNumber}</TableCell>
+                                            <TableCell className="text-sm">
+                                                {new Date(b.expiryDate).toLocaleDateString()}
+                                            </TableCell>
+                                            <TableCell className="text-right font-bold">{b.currentQuantity}</TableCell>
+                                            <TableCell className="text-right">₹{b.costPrice}</TableCell>
+                                            <TableCell>
+                                                {b.isExpired ? (
+                                                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 border border-rose-500/20">
+                                                        EXPIRED (Sale Blocked)
+                                                    </span>
+                                                ) : b.daysUntilExpiry <= 30 ? (
+                                                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                                        Near Expiry ({b.daysUntilExpiry} days)
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                                        Fresh ({b.daysUntilExpiry} days)
+                                                    </span>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Adjust Stock Modal */}
             <Modal
                 isOpen={isAdjustModalOpen}
                 onClose={() => setIsAdjustModalOpen(false)}
-                title="Inventory Settings"
-                description={`Update stock and threshold for ${selectedProduct?.name}`}
+                title={`Adjust Stock: ${selectedProduct?.name || ''}`}
+                description="Update the physical quantity. Every change is logged in the Stock Movement Ledger."
             >
-                <div className="space-y-4 pt-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Stock Count ({selectedProduct?.unitOfMeasure})</label>
-                            <Input
-                                type="number"
-                                value={newStock}
-                                onChange={(e) => setNewStock(e.target.value)}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Low Stock Threshold</label>
-                            <Input
-                                type="number"
-                                value={newThreshold}
-                                onChange={(e) => setNewThreshold(e.target.value)}
-                            />
-                        </div>
+                <div className="space-y-4 pt-2">
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium">New Stock Quantity *</label>
+                        <Input
+                            type="number"
+                            min="0"
+                            value={newStock}
+                            onChange={(e) => setNewStock(e.target.value)}
+                            className="text-lg font-bold"
+                        />
                     </div>
-                    <div className="flex justify-end gap-3 pt-4">
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium">Low Stock Alert Threshold</label>
+                        <Input
+                            type="number"
+                            min="0"
+                            value={newThreshold}
+                            onChange={(e) => setNewThreshold(e.target.value)}
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium">Reason for Adjustment</label>
+                        <Input
+                            placeholder="e.g. Annual physical count, found undamaged"
+                            value={adjustReason}
+                            onChange={(e) => setAdjustReason(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-3 border-t">
                         <Button variant="outline" onClick={() => setIsAdjustModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleUpdateStock}>Apply Changes</Button>
+                        <Button onClick={handleUpdateStock} disabled={savingAdjust}>
+                            {savingAdjust ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            Save Adjustment
+                        </Button>
                     </div>
                 </div>
             </Modal>

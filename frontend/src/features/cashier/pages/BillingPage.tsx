@@ -34,6 +34,8 @@ export const BillingPage = () => {
     const [showCalculator, setShowCalculator] = useState(false);
     const [amountGiven, setAmountGiven] = useState('');
     const [customerName, setCustomerName] = useState('');
+    const [discountPercent, setDiscountPercent] = useState('0');
+    const [discountReason] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [newProduct, setNewProduct] = useState({
         name: '',
@@ -124,7 +126,9 @@ export const BillingPage = () => {
                     discountPercent: 0 // Default 0 for now
                 })),
                 paymentMode: paymentMode,
-                customerName: finalCustomerName
+                customerName: finalCustomerName,
+                discountPercent: parseFloat(discountPercent) || 0,
+                discountReason: discountReason || undefined
             };
 
             await salesApi.createInvoice(invoiceRequest);
@@ -176,7 +180,8 @@ export const BillingPage = () => {
         }
     };
 
-    const grandTotal = subtotal;
+    const calcDiscount = (subtotal * (parseFloat(discountPercent) || 0)) / 100;
+    const grandTotal = Math.max(0, subtotal - calcDiscount);
 
     return (
         <div className="flex h-[calc(100vh-6rem)] gap-6 antialiased">
@@ -241,11 +246,25 @@ export const BillingPage = () => {
                     </CardContent>
                     <div className="p-6 border-t border-border bg-muted/30 space-y-4">
                         <div>
-                            <div className="flex justify-between items-center text-lg">
+                            <div className="flex justify-between items-center text-base">
                                 <span className="text-muted-foreground">Subtotal</span>
                                 <span className="font-semibold">₹{subtotal.toLocaleString()}</span>
                             </div>
-                            <div className="flex justify-between items-center text-2xl font-black mt-2">
+                            <div className="flex justify-between items-center text-sm py-1">
+                                <span className="text-muted-foreground">Discount (%):</span>
+                                <div className="flex items-center gap-1">
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="15"
+                                        value={discountPercent}
+                                        onChange={(e) => setDiscountPercent(e.target.value)}
+                                        className="w-16 h-7 text-xs text-center font-semibold"
+                                    />
+                                    <span className="text-emerald-600 font-semibold text-xs">-₹{calcDiscount.toFixed(2)}</span>
+                                </div>
+                            </div>
+                            <div className="flex justify-between items-center text-2xl font-black mt-1">
                                 <span>Total Amount</span>
                                 <span className="text-primary font-outfit">₹{grandTotal.toLocaleString()}</span>
                             </div>
