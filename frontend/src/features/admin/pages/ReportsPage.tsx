@@ -41,13 +41,18 @@ export const ReportsPage = () => {
         if (!summary) return;
         const rows = [
             ["Metric", "Value"],
-            ["Total Revenue", `₹${summary.totalRevenue}`],
+            ["Gross Sales", `₹${summary.grossRevenue || summary.totalRevenue}`],
+            ["Sales Returns / Refunds", `₹${summary.salesReturns || 0}`],
+            ["Net Revenue", `₹${summary.netRevenue || summary.totalRevenue}`],
             ["Total Transactions", summary.totalTransactions],
             ["Average Ticket Value", `₹${summary.averageTicket}`],
-            ["Cost of Goods Sold (COGS)", `₹${summary.totalCOGS}`],
+            ["Cost of Goods Sold (Net COGS)", `₹${summary.totalCOGS}`],
+            ["Damaged Goods Loss", `₹${summary.damagedGoodsLoss || 0}`],
             ["Gross Profit", `₹${summary.grossProfit}`],
             ["Profit Margin", `${summary.profitMarginPercent}%`],
-            ["Total Tax", `₹${summary.totalTax}`],
+            ["Gross Output Tax", `₹${summary.grossTax || summary.totalTax}`],
+            ["Tax Reversed on Returns", `₹${summary.taxReversed || 0}`],
+            ["Net Tax Liability", `₹${summary.totalTax}`],
             ["Total Discounts Given", `₹${summary.totalDiscount}`],
             [],
             ["Top Product", "Units Sold", "Revenue"],
@@ -116,10 +121,14 @@ export const ReportsPage = () => {
                 <>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <StatsCard
-                            title="Gross Revenue"
-                            value={`₹${Number(summary.totalRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+                            title="Net Revenue"
+                            value={`₹${Number(summary.netRevenue ?? summary.totalRevenue ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
                             icon={DollarSign}
-                            description={`Total ${rangeType} sales`}
+                            description={
+                                (summary.salesReturns && summary.salesReturns > 0)
+                                    ? `Gross: ₹${Number(summary.grossRevenue || 0).toLocaleString()} (Refunds: -₹${Number(summary.salesReturns).toLocaleString()})`
+                                    : `Total ${rangeType} sales`
+                            }
                             trend={{ value: 0, isPositive: true }}
                         />
                         <StatsCard
@@ -130,17 +139,21 @@ export const ReportsPage = () => {
                             trend={{ value: 0, isPositive: true }}
                         />
                         <StatsCard
-                            title="Cost of Goods (COGS)"
+                            title="Net COGS"
                             value={`₹${Number(summary.totalCOGS || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
                             icon={Package}
-                            description="Purchase cost of items sold"
+                            description={
+                                (summary.damagedGoodsLoss && summary.damagedGoodsLoss > 0)
+                                    ? `Damaged loss: ₹${Number(summary.damagedGoodsLoss).toLocaleString()}`
+                                    : "Purchase cost of items sold"
+                            }
                             trend={{ value: 0, isPositive: false }}
                         />
                         <StatsCard
                             title="Gross Profit"
                             value={`₹${Number(summary.grossProfit || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
                             icon={BarChart3}
-                            description={`Margin: ${summary.profitMarginPercent}%`}
+                            description={`Margin: ${summary.profitMarginPercent}% | Net Tax: ₹${Number(summary.totalTax || 0).toLocaleString()}`}
                             trend={{ value: summary.profitMarginPercent, isPositive: summary.grossProfit >= 0 }}
                         />
                     </div>

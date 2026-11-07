@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 export interface ActiveUser {
-    userId: number;
+    userId: string | number;
     username: string;
     role: string;
     loginTime: string;
@@ -23,7 +23,7 @@ interface DashboardState {
     
     setInitialData: (data: Partial<DashboardState>) => void;
     addActiveUser: (user: ActiveUser) => void;
-    removeActiveUser: (userId: number) => void;
+    removeActiveUser: (userId: string | number) => void;
     processInvoiceEvent: (cashierName: string, amount: number, totalRevenue: number) => void;
     clearRevenue: () => void;
 }
@@ -43,7 +43,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
     
     addActiveUser: (user) => set((state) => {
         // Prevent duplicates
-        if (state.activeUsers.find(u => u.userId === user.userId)) {
+        if (state.activeUsers.find(u => String(u.userId) === String(user.userId))) {
             return state;
         }
         return { 
@@ -53,7 +53,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
     }),
     
     removeActiveUser: (userId) => set((state) => ({
-        activeUsers: state.activeUsers.filter(u => u.userId !== userId),
+        activeUsers: state.activeUsers.filter(u => String(u.userId) !== String(userId)),
         lastUpdated: new Date()
     })),
     

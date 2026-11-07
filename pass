@@ -2,3 +2,14 @@ Role	Username	Password
 Admin    admin      admin123
 Cashier  cashier    cashier123
 
+1 while casher click the shift open ask for the conformation pop up 
+2 without start the shift cashier cant allow to bill
+3 customer actualy returned the product the product will be properly reflected in inventry and product properly but in revenue its not reduced properly in dashboard and sales & analytics it was reflecting Gross Revenue
+₹141.6 it waS REFLECTING not cleared pl check same scenario for damaged productes also handle these properly pl 
+4 Cost Price (₹): Purchase price from supplier (used for COGS calculation).
+Selling Price (₹): Price charged to customer at POS checkout.
+GST Rate (%): Tax percentage (0%, 5%, 12%, 18%, 28%).
+Low Stock Threshold: Triggers reorder alerts when inventory drops below this number.  these was not handle clearly pc check and implement in product add section also add tax , low stock , handle it clearly cost and selling also , while after purchase the product should want the option for sellcost & tax should be included as optional pl check 
+
+5 
+

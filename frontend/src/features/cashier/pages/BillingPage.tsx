@@ -26,7 +26,7 @@ import { Modal } from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
 export const BillingPage = () => {
-    const { items, addItem, removeItem, updateQuantity, subtotal, clearCart } = useCartStore();
+    const { items, addItem, removeItem, updateQuantity, clearCart } = useCartStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentMode, setPaymentMode] = useState<'CASH' | 'CARD' | 'UPI'>('CASH');
     const [products, setProducts] = useState<Product[]>([]);
@@ -38,6 +38,10 @@ export const BillingPage = () => {
     const [discountPercent, setDiscountPercent] = useState('0');
     const [discountReason] = useState('');
     const [activeShift, setActiveShift] = useState<CashierShift | null>(null);
+    const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+    const [shiftFloatInput, setShiftFloatInput] = useState('1000');
+    const [shiftNotesInput, setShiftNotesInput] = useState('');
+    const [startingShift, setStartingShift] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [newProduct, setNewProduct] = useState({
         name: '',
@@ -97,12 +101,15 @@ export const BillingPage = () => {
             if (e.key === 'F1') {
                 e.preventDefault();
                 searchInputRef.current?.focus();
+            } else if (e.altKey && e.key === 'Enter') {
+                e.preventDefault();
+                handleCheckout();
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [activeShift, items, customerName, paymentMode, discountPercent, discountReason]);
 
     const fetchActiveShift = async () => {
         try {
@@ -117,13 +124,18 @@ export const BillingPage = () => {
         fetchActiveShift();
     }, []);
 
-    const handleQuickStartShift = async () => {
+    const handleConfirmOpenShift = async () => {
         try {
-            const opened = await shiftsApi.openShift(1000, "Counter Quick Start");
+            setStartingShift(true);
+            const floatAmt = parseFloat(shiftFloatInput) || 0;
+            const opened = await shiftsApi.openShift(floatAmt, shiftNotesInput || "Counter Shift");
             setActiveShift(opened);
-            toast.success("Cashier Shift opened with ₹1,000 float!");
+            setIsShiftModalOpen(false);
+            toast.success(`Cashier Shift opened with ₹${floatAmt.toLocaleString()} float!`);
         } catch (err: any) {
             toast.error(err.response?.data?.detail || "Failed to start shift");
+        } finally {
+            setStartingShift(false);
         }
     };
 
@@ -134,6 +146,12 @@ export const BillingPage = () => {
     };
 
     const handleCheckout = async () => {
+        if (!activeShift) {
+            toast.error("Please open your cashier shift before creating a bill.");
+            setIsShiftModalOpen(true);
+            return;
+        }
+
         if (items.length === 0) return;
 
         try {
@@ -164,9 +182,9 @@ export const BillingPage = () => {
             setShowCalculator(false);
             fetchActiveShift();
             toast.success("Checkout Successful! Invoice Created.");
-        } catch (error) {
+        } catch (error: any) {
             console.error("Checkout Failed", error);
-            toast.error("Checkout Failed. Please try again.");
+            toast.error(error.response?.data?.detail || "Checkout Failed. Please try again.");
         } finally {
             setCheckoutLoading(false);
         }
@@ -206,8 +224,47 @@ export const BillingPage = () => {
         }
     };
 
-    const calcDiscount = (subtotal * (parseFloat(discountPercent) || 0)) / 100;
-    const grandTotal = Math.max(0, subtotal - calcDiscount);
+    // Accurate Indian GST and Grand Total calculations
+    let grossTaxable = 0;
+    let totalTax = 0;
+    let totalCgst = 0;
+    let totalSgst = 0;
+    const gstRateBreakdown: Record<number, number> = {};
+
+    items.forEach((item) => {
+        const rawLine = item.sellingPrice * item.quantity;
+        const isIncl = Boolean(item.isInclusive);
+        const rate = (item.isTaxable !== false && item.taxType !== 'NIL_RATED' && item.taxType !== 'EXEMPT' && item.taxType !== 'NON_GST') 
+            ? (Number(item.gstRate) || 0) 
+            : 0;
+
+        let lineTaxable = rawLine;
+        let lineTax = 0;
+
+        if (rate <= 0) {
+            lineTaxable = rawLine;
+            lineTax = 0;
+        } else if (isIncl) {
+            lineTaxable = rawLine / (1 + rate / 100);
+            lineTax = rawLine - lineTaxable;
+        } else {
+            lineTaxable = rawLine;
+            lineTax = rawLine * (rate / 100);
+        }
+
+        grossTaxable += lineTaxable;
+        totalTax += lineTax;
+        if (rate > 0) {
+            gstRateBreakdown[rate] = (gstRateBreakdown[rate] || 0) + lineTax;
+        }
+    });
+
+    totalCgst = totalTax / 2;
+    totalSgst = totalTax / 2;
+
+    const discountPct = parseFloat(discountPercent) || 0;
+    const calcDiscount = (grossTaxable * discountPct) / 100;
+    const grandTotal = Math.max(0, grossTaxable - calcDiscount + totalTax);
 
     return (
         <div className="flex h-[calc(100vh-6rem)] gap-6 antialiased">
@@ -231,10 +288,10 @@ export const BillingPage = () => {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={handleQuickStartShift}
+                                    onClick={() => setIsShiftModalOpen(true)}
                                     className="text-amber-600 border-amber-500/30 hover:bg-amber-500/10 text-xs h-7"
                                 >
-                                    ⚠️ Start Shift (Float ₹1,000)
+                                    ⚠️ Open Shift (Required)
                                 </Button>
                             )}
                             <Button variant="ghost" size="sm" onClick={clearCart} className="text-muted-foreground hover:text-rose-500">
@@ -253,8 +310,22 @@ export const BillingPage = () => {
                                 {items.map((item) => (
                                     <div key={item.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-card/50 hover:bg-card transition-colors">
                                         <div className="flex flex-col">
-                                            <span className="font-semibold text-base">{item.name}</span>
-                                            <span className="text-base text-muted-foreground">₹{item.sellingPrice.toLocaleString()} per unit</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold text-base">{item.name}</span>
+                                                {item.isInclusive ? (
+                                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-muted text-muted-foreground font-medium">GST Incl.</span>
+                                                ) : (
+                                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-primary/10 text-primary font-medium">+GST {item.gstRate}%</span>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <span>₹{item.sellingPrice.toLocaleString()} / {item.unitOfMeasure || 'unit'}</span>
+                                                {item.mrp && item.mrp > item.sellingPrice ? (
+                                                    <span className="text-emerald-600 font-medium">
+                                                        (MRP: ₹{item.mrp.toLocaleString()}, save ₹{(item.mrp - item.sellingPrice).toLocaleString()})
+                                                    </span>
+                                                ) : null}
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className="flex items-center border border-border rounded-lg bg-background px-4 py-2">
@@ -289,9 +360,9 @@ export const BillingPage = () => {
                     </CardContent>
                     <div className="p-6 border-t border-border bg-muted/30 space-y-4">
                         <div>
-                            <div className="flex justify-between items-center text-base">
-                                <span className="text-muted-foreground">Subtotal</span>
-                                <span className="font-semibold">₹{subtotal.toLocaleString()}</span>
+                            <div className="flex justify-between items-center text-sm py-0.5">
+                                <span className="text-muted-foreground">Taxable Value</span>
+                                <span className="font-semibold">₹{grossTaxable.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm py-1">
                                 <span className="text-muted-foreground">Discount (%):</span>
@@ -307,9 +378,30 @@ export const BillingPage = () => {
                                     <span className="text-emerald-600 font-semibold text-xs">-₹{calcDiscount.toFixed(2)}</span>
                                 </div>
                             </div>
-                            <div className="flex justify-between items-center text-2xl font-black mt-1">
-                                <span>Total Amount</span>
-                                <span className="text-primary font-outfit">₹{grandTotal.toLocaleString()}</span>
+                            {totalTax > 0 && (
+                                <div className="py-1 border-t border-border/40 mt-1 space-y-0.5 text-xs text-muted-foreground">
+                                    <div className="flex justify-between">
+                                        <span>Total Output GST:</span>
+                                        <span className="font-medium text-foreground">₹{totalTax.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-[11px] pl-2">
+                                        <span>CGST:</span>
+                                        <span>₹{totalCgst.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-[11px] pl-2">
+                                        <span>SGST:</span>
+                                        <span>₹{totalSgst.toFixed(2)}</span>
+                                    </div>
+                                    {Object.keys(gstRateBreakdown).length > 0 && (
+                                        <div className="text-[10px] text-muted-foreground pt-0.5 italic">
+                                            Rates: {Object.entries(gstRateBreakdown).map(([r, amt]) => `${r}%: ₹${amt.toFixed(2)}`).join(' | ')}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            <div className="flex justify-between items-center text-2xl font-black mt-2 pt-2 border-t border-border">
+                                <span>Grand Total</span>
+                                <span className="text-primary font-outfit">₹{grandTotal.toFixed(2)}</span>
                             </div>
                         </div>
 
@@ -467,6 +559,22 @@ export const BillingPage = () => {
                         </div>
 
                         <div className="mt-auto space-y-4 pt-6">
+                            {!activeShift && (
+                                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between text-xs text-amber-700 dark:text-amber-400">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-base">⚠️</span>
+                                        <span className="font-medium">Please open your cashier shift before creating a bill.</span>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        onClick={() => setIsShiftModalOpen(true)}
+                                        className="h-7 text-xs bg-amber-600 hover:bg-amber-700 text-white font-medium shadow-sm"
+                                    >
+                                        Open Shift
+                                    </Button>
+                                </div>
+                            )}
+
                             <div className="flex items-center justify-between p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-600">
                                 <div className="flex items-center gap-2">
                                     <Keyboard className="h-4 w-4" />
@@ -477,11 +585,11 @@ export const BillingPage = () => {
 
                             <Button
                                 className="w-full h-16 text-lg font-bold shadow-xl shadow-primary/20"
-                                disabled={items.length === 0 || checkoutLoading}
+                                disabled={items.length === 0 || checkoutLoading || !activeShift}
                                 onClick={handleCheckout}
                             >
                                 {checkoutLoading ? <Loader2 className="h-6 w-6 animate-spin mr-2" /> : null}
-                                {checkoutLoading ? 'Processing...' : 'Confirm Checkout'}
+                                {checkoutLoading ? 'Processing...' : !activeShift ? 'Open Shift to Bill' : 'Confirm Checkout'}
                             </Button>
                         </div>
                     </CardContent>
@@ -575,6 +683,59 @@ export const BillingPage = () => {
                     <div className="flex justify-end gap-3 pt-4">
                         <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
                         <Button onClick={handleSaveCustomProduct}>Add to Cart</Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Shift Opening Confirmation Modal */}
+            <Modal
+                isOpen={isShiftModalOpen}
+                onClose={() => setIsShiftModalOpen(false)}
+                title="Start Cashier Shift Confirmation"
+                description="You are about to start a new cashier shift."
+            >
+                <div className="space-y-4 pt-2">
+                    <div className="p-3.5 bg-muted/40 rounded-xl border space-y-1.5 text-xs text-muted-foreground">
+                        <p className="font-semibold text-foreground text-sm">
+                            ⚠️ Active Cashier Shift Required
+                        </p>
+                        <p>
+                            POS invoices and cash receipts must be accounted under an active shift. Please confirm your opening cash drawer float to begin.
+                        </p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium">Opening Cash Float (₹) *</label>
+                        <Input
+                            type="number"
+                            placeholder="1000"
+                            value={shiftFloatInput}
+                            onChange={(e) => setShiftFloatInput(e.target.value)}
+                            className="text-lg font-bold h-11"
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium">Shift Notes (Optional)</label>
+                        <Input
+                            placeholder="e.g. Counter #1 Morning"
+                            value={shiftNotesInput}
+                            onChange={(e) => setShiftNotesInput(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-3 border-t">
+                        <Button variant="outline" onClick={() => setIsShiftModalOpen(false)} disabled={startingShift}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleConfirmOpenShift}
+                            disabled={startingShift}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                        >
+                            {startingShift ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            Confirm & Open Shift
+                        </Button>
                     </div>
                 </div>
             </Modal>

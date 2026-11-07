@@ -43,10 +43,12 @@ async def login(request: schemas.LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/logout")
 async def logout(token: str = Depends(oauth2_scheme)):
-    if token in sessions:
-        user_id = sessions[token]
-        del sessions[token]
-        await manager.user_logout(user_id)
+    user_id = sessions.get(token)
+    if user_id:
+        user_id_str = str(user_id)
+        if token in sessions:
+            del sessions[token]
+        await manager.user_logout(user_id_str)
     return {"message": "Logged out successfully"}
 
 # Dependency to get current user

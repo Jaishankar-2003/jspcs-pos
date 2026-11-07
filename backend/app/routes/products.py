@@ -40,6 +40,20 @@ def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)
     if current_user.role not in ["ADMIN", "CASHIER"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
+    if product.sellingPrice < 0 or (product.costPrice is not None and product.costPrice < 0):
+        raise HTTPException(status_code=400, detail="Price and cost cannot be negative")
+
+    if product.mrp is not None:
+        if product.mrp < 0:
+            raise HTTPException(status_code=400, detail="MRP cannot be negative")
+        if product.mrp > 0 and product.sellingPrice > product.mrp:
+            raise HTTPException(status_code=400, detail="Selling price cannot exceed Maximum Retail Price (MRP)")
+
+    if product.customCgstRate is not None and product.customSgstRate is not None:
+        total_custom = product.customCgstRate + product.customSgstRate
+        if abs(total_custom - (product.gstRate or Decimal("0.00"))) > Decimal("0.01"):
+            raise HTTPException(status_code=400, detail="Custom CGST rate + SGST rate must equal total GST rate")
+
     # Check duplicate SKU
     existing = db.query(models.Product).filter(models.Product.sku == product.sku).first()
     if existing:
@@ -55,9 +69,14 @@ def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)
         unit_of_measure=product.unitOfMeasure,
         cost_price=product.costPrice or Decimal("0.00"),
         price=product.sellingPrice,
+        mrp=product.mrp,
         gst_rate=product.gstRate,
         hsn_code=product.hsnCode,
         is_taxable=product.isTaxable,
+        is_inclusive=bool(product.isInclusive),
+        tax_type=product.taxType or "TAXABLE",
+        custom_cgst_rate=product.customCgstRate,
+        custom_sgst_rate=product.customSgstRate,
         low_stock_threshold=product.low_stock_threshold
     )
     db.add(db_product)
@@ -117,6 +136,7 @@ async def bulk_upload_products(file: UploadFile = File(...), db: Session = Depen
             init_stock = int(row.get('currentStock') or row.get('stock') or '0')
             selling_price = Decimal(row.get('sellingPrice') or row.get('price') or '0')
             cost_price = Decimal(row.get('costPrice') or '0')
+            mrp_val = Decimal(row.get('mrp')) if row.get('mrp') else None
             gst_rate = Decimal(row.get('gstRate') or '0')
             low_stock = int(row.get('lowStockThreshold') or '10')
 
@@ -129,9 +149,12 @@ async def bulk_upload_products(file: UploadFile = File(...), db: Session = Depen
                 unit_of_measure=row.get('unitOfMeasure', 'unit'),
                 cost_price=cost_price,
                 price=selling_price,
+                mrp=mrp_val,
                 gst_rate=gst_rate,
                 hsn_code=row.get('hsnCode', ''),
                 is_taxable=str(row.get('isTaxable', 'true')).lower() == 'true',
+                is_inclusive=str(row.get('isInclusive', 'false')).lower() == 'true',
+                tax_type=row.get('taxType') or row.get('tax_type') or 'TAXABLE',
                 low_stock_threshold=low_stock
             )
             db.add(db_product)
@@ -201,15 +224,43 @@ def update_product(id: str, product_update: schemas.ProductUpdate, db: Session =
     if product_update.unitOfMeasure is not None:
         db_product.unit_of_measure = product_update.unitOfMeasure
     if product_update.costPrice is not None:
+        if product_update.costPrice < 0:
+            raise HTTPException(status_code=400, detail="Cost price cannot be negative")
         db_product.cost_price = product_update.costPrice
+    if product_update.mrp is not None:
+        if product_update.mrp < 0:
+            raise HTTPException(status_code=400, detail="MRP cannot be negative")
+        if product_update.mrp > 0 and db_product.price > product_update.mrp and product_update.sellingPrice is None:
+            raise HTTPException(status_code=400, detail="Selling price cannot exceed Maximum Retail Price (MRP)")
+        db_product.mrp = product_update.mrp
     if product_update.sellingPrice is not None:
+        if product_update.sellingPrice < 0:
+            raise HTTPException(status_code=400, detail="Selling price cannot be negative")
+        target_mrp = product_update.mrp if product_update.mrp is not None else db_product.mrp
+        if target_mrp is not None and target_mrp > 0 and product_update.sellingPrice > target_mrp:
+            raise HTTPException(status_code=400, detail="Selling price cannot exceed Maximum Retail Price (MRP)")
         db_product.price = product_update.sellingPrice
+
+    new_cgst = product_update.customCgstRate if product_update.customCgstRate is not None else db_product.custom_cgst_rate
+    new_sgst = product_update.customSgstRate if product_update.customSgstRate is not None else db_product.custom_sgst_rate
+    new_gst = product_update.gstRate if product_update.gstRate is not None else db_product.gst_rate
+    if new_cgst is not None and new_sgst is not None and new_gst is not None:
+        if abs((new_cgst + new_sgst) - new_gst) > Decimal("0.01"):
+            raise HTTPException(status_code=400, detail="Custom CGST rate + SGST rate must equal total GST rate")
     if product_update.gstRate is not None:
         db_product.gst_rate = product_update.gstRate
     if product_update.hsnCode is not None:
         db_product.hsn_code = product_update.hsnCode
     if product_update.isTaxable is not None:
         db_product.is_taxable = product_update.isTaxable
+    if product_update.isInclusive is not None:
+        db_product.is_inclusive = product_update.isInclusive
+    if product_update.taxType is not None:
+        db_product.tax_type = product_update.taxType
+    if product_update.customCgstRate is not None:
+        db_product.custom_cgst_rate = product_update.customCgstRate
+    if product_update.customSgstRate is not None:
+        db_product.custom_sgst_rate = product_update.customSgstRate
     if product_update.low_stock_threshold is not None:
         db_product.low_stock_threshold = product_update.low_stock_threshold
     if product_update.is_active is not None:

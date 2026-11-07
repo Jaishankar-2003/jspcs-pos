@@ -5,7 +5,10 @@ from app.database import get_db
 from app import models, schemas
 from app.routes.auth import get_current_user
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
+from sqlalchemy import func
+from app.websocket_manager import manager
+from app.services.gst_service import calculate_return_proportional_tax
 
 router = APIRouter()
 
@@ -36,7 +39,7 @@ def format_return_response(r: models.SalesReturn) -> dict:
     }
 
 @router.post("", response_model=schemas.SalesReturnResponse)
-def create_sales_return(
+async def create_sales_return(
     return_req: schemas.SalesReturnCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
@@ -103,18 +106,28 @@ def create_sales_return(
                 detail=f"Cannot return {item.quantity} units of '{orig_item.product.name if orig_item.product else pid}'. Max returnable is {max_returnable}."
             )
 
-        # Historical price from original sale item
+        # Historical price and proportional tax from original sale item
         unit_price = orig_item.unit_price
         line_refund = unit_price * item.quantity
         total_refund += line_refund
+
+        prop_tax = calculate_return_proportional_tax(
+            sale_item_tax_amount=orig_item.tax_amount or Decimal("0.00"),
+            sale_item_quantity=orig_item.quantity,
+            return_quantity=item.quantity
+        )
+        hist_unit_cost = orig_item.unit_cost if orig_item.unit_cost is not None else Decimal("0.00")
 
         return_item = models.SalesReturnItem(
             return_id=new_return.id,
             sale_item_id=orig_item.id,
             product_id=orig_item.product_id,
+            batch_id=orig_item.batch_id,
             quantity=item.quantity,
             unit_price=unit_price,
             refund_subtotal=line_refund,
+            tax_amount=prop_tax,
+            unit_cost=hist_unit_cost,
             condition=(item.condition or "SELLABLE").upper()
         )
         db.add(return_item)
@@ -154,7 +167,7 @@ def create_sales_return(
                 new_quantity=prev_qty,
                 reference_type="RETURN",
                 reference_id=new_return.id,
-                reason=f"Damaged return in {return_num} (quarantined)",
+                reason=f"Damaged return in {return_num} (quarantined loss)",
                 created_by=current_user.id
             )
             db.add(movement)
@@ -167,6 +180,24 @@ def create_sales_return(
 
     db.commit()
     db.refresh(new_return)
+
+    # Calculate today's net revenue for WebSocket broadcast
+    today = date.today()
+    q_s = db.query(func.sum(models.Sale.total_amount)).filter(func.date(models.Sale.created_at) == today)
+    q_r = db.query(func.sum(models.SalesReturn.total_refund_amount)).filter(func.date(models.SalesReturn.created_at) == today)
+    if manager.last_cleared_timestamp:
+        q_s = q_s.filter(models.Sale.created_at >= manager.last_cleared_timestamp)
+        q_r = q_r.filter(models.SalesReturn.created_at >= manager.last_cleared_timestamp)
+        
+    today_net = float(q_s.scalar() or 0) - float(q_r.scalar() or 0)
+
+    await manager.broadcast({
+        "type": "SALES_RETURN_CREATED",
+        "cashierName": current_user.username,
+        "refundAmount": float(total_refund),
+        "totalRevenue": max(0.0, float(today_net))
+    })
+
     return format_return_response(new_return)
 
 @router.get("", response_model=List[schemas.SalesReturnResponse])

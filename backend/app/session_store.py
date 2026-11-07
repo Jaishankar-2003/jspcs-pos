@@ -48,9 +48,6 @@ class PersistentSessionStore:
     def get(self, token: str, default=None):
         if not token:
             return default
-            
-        if token in self._cache:
-            return self._cache[token]
 
         db = self._get_db()
         try:
@@ -60,14 +57,23 @@ class PersistentSessionStore:
                 models.UserSession.expires_at > now
             ).first()
             if db_session:
-                self._cache[token] = str(db_session.user_id)
-                return str(db_session.user_id)
+                uid = str(db_session.user_id)
+                self._cache[token] = uid
+                return uid
+            else:
+                self._cache.pop(token, None)
+                return default
         except Exception as e:
             print(f"Warning: Failed to query session from DB: {e}")
+            return self._cache.get(token, default)
         finally:
             db.close()
 
-        return default
+    def __getitem__(self, token: str):
+        val = self.get(token)
+        if val is None:
+            raise KeyError(token)
+        return val
 
     def __contains__(self, token: str):
         return self.get(token) is not None
@@ -86,34 +92,42 @@ class PersistentSessionStore:
 
     def values(self):
         db = self._get_db()
-        user_ids = set(self._cache.values())
         try:
             now = datetime.datetime.now(datetime.timezone.utc)
             db_sessions = db.query(models.UserSession.user_id).filter(
                 models.UserSession.expires_at > now
             ).all()
-            for s in db_sessions:
-                user_ids.add(str(s[0]))
+            return [str(s[0]) for s in db_sessions]
         except Exception as e:
             print(f"Warning: Failed to get active session values from DB: {e}")
+            return list(set(str(v) for v in self._cache.values()))
         finally:
             db.close()
-        return list(user_ids)
 
     def keys(self):
         db = self._get_db()
-        token_keys = set(self._cache.keys())
         try:
             now = datetime.datetime.now(datetime.timezone.utc)
             db_sessions = db.query(models.UserSession.token).filter(
                 models.UserSession.expires_at > now
             ).all()
-            for s in db_sessions:
-                token_keys.add(s[0])
+            return [str(s[0]) for s in db_sessions]
         except Exception as e:
             print(f"Warning: Failed to get session keys from DB: {e}")
+            return list(self._cache.keys())
         finally:
             db.close()
-        return list(token_keys)
+
+    def clear(self):
+        self._cache.clear()
+        db = self._get_db()
+        try:
+            db.query(models.UserSession).delete()
+            db.commit()
+        except Exception as e:
+            print(f"Warning: Failed to clear sessions: {e}")
+            db.rollback()
+        finally:
+            db.close()
 
 sessions = PersistentSessionStore()

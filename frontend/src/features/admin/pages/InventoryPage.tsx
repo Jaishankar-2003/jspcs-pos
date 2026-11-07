@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Package,
     AlertTriangle,
@@ -6,6 +6,7 @@ import {
     Loader2,
     ArrowDownRight,
     ArrowUpRight,
+    TrendingUp,
     History,
     Boxes,
     Clock
@@ -31,9 +32,16 @@ export const InventoryPage = () => {
     const [valuation, setValuation] = useState<{
         totalProducts: number;
         totalStockUnits: number;
+        unitsBreakdown?: Record<string, number>;
+        lowStockCount?: number;
+        outOfStockCount?: number;
+        healthyStockCount?: number;
         costValuation: number;
         retailValuation: number;
+        netRetailValuation?: number;
+        potentialGrossProfit?: number;
         potentialMargin: number;
+        productValuations?: any[];
     } | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -142,6 +150,21 @@ export const InventoryPage = () => {
     const lowStockCount = products.filter(p => (p.currentStock || 0) <= (p.low_stock_threshold || 10) && (p.currentStock || 0) > 0).length;
     const outOfStockCount = products.filter(p => (p.currentStock || 0) <= 0).length;
 
+    const valMap = useMemo(() => {
+        const map = new Map<string, any>();
+        if (valuation?.productValuations) {
+            valuation.productValuations.forEach(pv => map.set(pv.id, pv));
+        }
+        return map;
+    }, [valuation]);
+
+    const unitsSummary = useMemo(() => {
+        if (!valuation?.unitsBreakdown) return '';
+        const entries = Object.entries(valuation.unitsBreakdown);
+        if (entries.length === 0) return '';
+        return entries.map(([u, q]) => `${q} ${u}`).slice(0, 3).join(', ');
+    }, [valuation]);
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -172,33 +195,40 @@ export const InventoryPage = () => {
             </div>
 
             {/* Valuation KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <StatsCard
                     title="Total Inventory Units"
                     value={valuation ? Number(valuation.totalStockUnits).toLocaleString() : '0'}
                     icon={Package}
-                    description={`${products.length} catalog items`}
+                    description={unitsSummary || `${products.length} catalog items`}
                     trend={{ value: 0, isPositive: true }}
                 />
                 <StatsCard
                     title="Cost Valuation"
                     value={`₹${valuation ? Number(valuation.costValuation).toLocaleString() : '0'}`}
                     icon={ArrowDownRight}
-                    description="Total purchase cost"
+                    description="Asset value (purchase cost)"
                     trend={{ value: 0, isPositive: true }}
                 />
                 <StatsCard
                     title="Retail Valuation"
                     value={`₹${valuation ? Number(valuation.retailValuation).toLocaleString() : '0'}`}
                     icon={ArrowUpRight}
-                    description="Total potential sales"
+                    description="Potential sales at retail"
                     trend={{ value: 0, isPositive: true }}
                 />
                 <StatsCard
+                    title="Potential Gross Profit"
+                    value={`₹${valuation ? Number(valuation.potentialGrossProfit || 0).toLocaleString() : '0'}`}
+                    icon={TrendingUp}
+                    description={`${valuation?.potentialMargin || 0}% margin (excl. GST)`}
+                    trend={{ value: valuation?.potentialMargin || 0, isPositive: (valuation?.potentialMargin || 0) >= 0 }}
+                />
+                <StatsCard
                     title="Stock Health Alerts"
-                    value={`${lowStockCount + outOfStockCount}`}
+                    value={`${(valuation?.lowStockCount ?? lowStockCount) + (valuation?.outOfStockCount ?? outOfStockCount)}`}
                     icon={AlertTriangle}
-                    description={`${outOfStockCount} Out, ${lowStockCount} Low`}
+                    description={`${valuation?.outOfStockCount ?? outOfStockCount} Out, ${valuation?.lowStockCount ?? lowStockCount} Low, ${valuation?.healthyStockCount ?? Math.max(0, products.length - lowStockCount - outOfStockCount)} Well`}
                     trend={{ value: 0, isPositive: false }}
                 />
             </div>
@@ -238,46 +268,96 @@ export const InventoryPage = () => {
                         ) : paginatedInventory.length === 0 ? (
                             <p className="text-center py-8 text-muted-foreground">No matching inventory items.</p>
                         ) : (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Product</TableHead>
-                                        <TableHead>SKU</TableHead>
-                                        <TableHead>Category</TableHead>
-                                        <TableHead className="text-right">Unit Price</TableHead>
-                                        <TableHead className="text-right">Current Stock</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {paginatedInventory.map((item) => {
-                                        const threshold = item.low_stock_threshold || 10;
-                                        const isLow = (item.currentStock || 0) <= threshold;
-                                        const isOut = (item.currentStock || 0) <= 0;
+                            <div className="overflow-x-auto rounded-lg border border-border">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-muted/40">
+                                            <TableHead className="whitespace-nowrap min-w-[180px]">Product</TableHead>
+                                            <TableHead className="whitespace-nowrap min-w-[110px]">SKU</TableHead>
+                                            <TableHead className="text-right whitespace-nowrap min-w-[100px]">Unit Cost</TableHead>
+                                            <TableHead className="text-right whitespace-nowrap min-w-[120px]">Selling Price</TableHead>
+                                            <TableHead className="text-right whitespace-nowrap min-w-[100px]">MRP</TableHead>
+                                            <TableHead className="text-right whitespace-nowrap min-w-[120px]">Current Stock</TableHead>
+                                            <TableHead className="text-right whitespace-nowrap min-w-[120px]">Stock Value</TableHead>
+                                            <TableHead className="text-right whitespace-nowrap min-w-[120px]">Est. Gross Profit</TableHead>
+                                            <TableHead className="text-center whitespace-nowrap min-w-[110px]">Status</TableHead>
+                                            <TableHead className="text-right whitespace-nowrap min-w-[110px]">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {paginatedInventory.map((item) => {
+                                            const threshold = item.low_stock_threshold || 10;
+                                            const isLow = (item.currentStock || 0) <= threshold;
+                                            const isOut = (item.currentStock || 0) <= 0;
+                                            const val = valMap.get(item.id);
 
-                                        return (
-                                            <TableRow key={item.id}>
-                                                <TableCell className="font-semibold">{item.name}</TableCell>
-                                                <TableCell className="font-mono text-xs">{item.sku}</TableCell>
-                                                <TableCell>{item.category || '-'}</TableCell>
-                                                <TableCell className="text-right">₹{item.sellingPrice}</TableCell>
-                                                <TableCell className="text-right font-bold text-base">{item.currentStock || 0}</TableCell>
-                                                <TableCell>
-                                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold border ${isOut ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' : isLow ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'}`}>
-                                                        {isOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock'}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button size="sm" variant="outline" onClick={() => handleOpenAdjust(item)}>
-                                                        Adjust Stock
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
+                                            const unitCost = val ? Number(val.costPrice || 0) : Number(item.costPrice || 0);
+                                            const sellingPrice = val ? Number(val.sellingPrice || 0) : Number(item.sellingPrice || 0);
+                                            const mrp = val?.mrp ?? item.mrp;
+                                            const retailValue = val ? Number(val.retailValue || 0) : ((item.currentStock || 0) * sellingPrice);
+                                            const estProfit = val ? Number(val.estimatedProfit || 0) : (unitCost > 0 ? (retailValue - (item.currentStock || 0) * unitCost) : 0);
+
+                                            return (
+                                                <TableRow key={item.id} className="hover:bg-muted/20">
+                                                    <TableCell className="min-w-[180px]">
+                                                        <div className="font-semibold text-foreground">{item.name}</div>
+                                                        <div className="text-xs text-muted-foreground">{item.category || '-'}</div>
+                                                    </TableCell>
+                                                    <TableCell className="font-mono text-xs whitespace-nowrap">{item.sku}</TableCell>
+                                                    <TableCell className="text-right whitespace-nowrap">
+                                                        {unitCost > 0 ? (
+                                                            <span>₹{unitCost.toFixed(2)}</span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground text-xs italic">N/A</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-right whitespace-nowrap">
+                                                        <div>₹{sellingPrice.toFixed(2)}</div>
+                                                        <span className="text-[10px] px-1 py-0.5 rounded bg-muted text-muted-foreground whitespace-nowrap">
+                                                            {item.isInclusive ? 'Incl. GST' : '+GST'}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="text-right whitespace-nowrap">
+                                                        {mrp ? (
+                                                            <span className="font-medium text-slate-700 dark:text-slate-300">₹{Number(mrp).toFixed(2)}</span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground text-xs">-</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-right whitespace-nowrap font-bold text-base">
+                                                        {item.currentStock || 0}{' '}
+                                                        <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                                                            {item.unitOfMeasure || 'PCS'}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="text-right whitespace-nowrap font-semibold">
+                                                        ₹{retailValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </TableCell>
+                                                    <TableCell className="text-right whitespace-nowrap">
+                                                        {unitCost > 0 ? (
+                                                            <span className={estProfit >= 0 ? 'text-emerald-600 font-semibold' : 'text-rose-600 font-semibold'}>
+                                                                ₹{estProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground text-xs italic">Cost N/A</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-center whitespace-nowrap">
+                                                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap ${isOut ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' : isLow ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'}`}>
+                                                            {isOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock'}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="text-right whitespace-nowrap">
+                                                        <Button size="sm" variant="outline" onClick={() => handleOpenAdjust(item)}>
+                                                            Adjust Stock
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         )}
 
                         {totalPages > 1 && (

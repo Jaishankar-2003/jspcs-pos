@@ -192,23 +192,86 @@ def get_inventory_valuation(db: Session = Depends(get_db), current_user: models.
     total_items = 0
     total_cost_valuation = Decimal("0.00")
     total_retail_valuation = Decimal("0.00")
+    total_net_retail_valuation = Decimal("0.00")
+    
+    units_breakdown: dict = {}
+    low_stock_count = 0
+    out_of_stock_count = 0
+    healthy_stock_count = 0
+    product_valuations = []
 
     for p in products:
         qty = p.stock.quantity if p.stock else 0
         cost = p.cost_price or Decimal("0.00")
         price = p.price or Decimal("0.00")
-        
-        total_items += qty
-        total_cost_valuation += cost * qty
-        total_retail_valuation += price * qty
+        gst_r = p.gst_rate or Decimal("0.00")
+        unit = p.unit_of_measure or "unit"
+        low_threshold = p.low_stock_threshold if p.low_stock_threshold is not None else 10
+        is_incl = bool(p.is_inclusive)
+        mrp_val = p.mrp
 
+        # Unit of measure breakdown
+        units_breakdown[unit] = units_breakdown.get(unit, 0) + qty
+
+        # Stock health
+        if qty <= 0:
+            out_of_stock_count += 1
+        elif qty <= low_threshold:
+            low_stock_count += 1
+        else:
+            healthy_stock_count += 1
+
+        # Valuations
+        item_cost_val = cost * qty
+        item_retail_val = price * qty
+
+        # Taxable selling value (extract GST if inclusive)
+        if is_incl and gst_r > Decimal("0.00") and p.is_taxable:
+            taxable_unit_price = (price / (Decimal("1.00") + (gst_r / Decimal("100.00")))).quantize(Decimal("0.01"))
+        else:
+            taxable_unit_price = price
+
+        item_net_retail_val = taxable_unit_price * qty
+        item_potential_profit = item_net_retail_val - item_cost_val
+
+        total_items += qty
+        total_cost_valuation += item_cost_val
+        total_retail_valuation += item_retail_val
+        total_net_retail_valuation += item_net_retail_val
+
+        product_valuations.append({
+            "productId": str(p.id),
+            "name": p.name,
+            "sku": p.sku,
+            "category": p.category or "General",
+            "unit": unit,
+            "currentStock": qty,
+            "costPrice": cost,
+            "sellingPrice": price,
+            "mrp": mrp_val,
+            "gstRate": gst_r,
+            "isInclusive": is_incl,
+            "costValuation": item_cost_val,
+            "retailValuation": item_retail_val,
+            "netRetailValuation": item_net_retail_val,
+            "potentialGrossProfit": item_potential_profit
+        })
+
+    potential_gross_profit = total_net_retail_valuation - total_cost_valuation
     potential_margin = total_retail_valuation - total_cost_valuation
 
     return {
         "totalProducts": len(products),
         "totalStockUnits": total_items,
+        "unitsBreakdown": units_breakdown,
+        "lowStockCount": low_stock_count,
+        "outOfStockCount": out_of_stock_count,
+        "healthyStockCount": healthy_stock_count,
         "costValuation": total_cost_valuation,
         "retailValuation": total_retail_valuation,
-        "potentialMargin": potential_margin
+        "netRetailValuation": total_net_retail_valuation,
+        "potentialGrossProfit": potential_gross_profit,
+        "potentialMargin": potential_margin,
+        "productValuations": product_valuations
     }
 

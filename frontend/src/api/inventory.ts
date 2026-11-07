@@ -26,7 +26,20 @@ export const inventoryApi = {
         const { data } = await api.post<ProductBatch>('/inventory/batches', batchData);
         return data;
     },
-    getValuation: async (): Promise<{ totalProducts: number; totalStockUnits: number; costValuation: number; retailValuation: number; potentialMargin: number }> => {
+    getValuation: async (): Promise<{
+        totalProducts: number;
+        totalStockUnits: number;
+        unitsBreakdown?: Record<string, number>;
+        lowStockCount?: number;
+        outOfStockCount?: number;
+        healthyStockCount?: number;
+        costValuation: number;
+        retailValuation: number;
+        netRetailValuation?: number;
+        potentialGrossProfit?: number;
+        potentialMargin: number;
+        productValuations?: any[];
+    }> => {
         const { data } = await api.get('/inventory/valuation');
         return data;
     }

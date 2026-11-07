@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Plus,
     Search,
@@ -7,7 +7,9 @@ import {
     Truck,
     Phone,
     Mail,
-    Loader2
+    Loader2,
+    FileUp,
+    Download
 } from 'lucide-react';
 import {
     Table,
@@ -32,6 +34,11 @@ export const SuppliersPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
     const [submitting, setSubmitting] = useState(false);
+
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importing, setImporting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -131,6 +138,32 @@ export const SuppliersPage = () => {
         (s.phone || '').includes(searchTerm)
     );
 
+    const handleImport = async () => {
+        if (!importFile) return;
+        try {
+            setImporting(true);
+            const result = await suppliersApi.uploadBulk(importFile);
+            toast.success(result.message);
+            if (result.errors && result.errors.length > 0) {
+                console.warn('Supplier import warnings:', result.errors);
+                toast(result.errors.join('\n'), { icon: '⚠️', duration: 5000 });
+            }
+            setIsImportModalOpen(false);
+            setImportFile(null);
+            fetchSuppliers();
+        } catch (error: any) {
+            console.error('Bulk import error', error);
+            const msg = error.response?.data?.detail || error.message || 'Bulk import failed.';
+            toast.error(msg);
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    const downloadSampleCSV = () => {
+        suppliersApi.downloadSampleCSV();
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -138,10 +171,16 @@ export const SuppliersPage = () => {
                     <h1 className="text-3xl font-bold tracking-tight">Suppliers</h1>
                     <p className="text-muted-foreground">Manage vendors, contact details, and purchase channels.</p>
                 </div>
-                <Button onClick={handleOpenAdd}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Supplier
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+                        <FileUp className="mr-2 h-4 w-4" />
+                        Bulk Upload
+                    </Button>
+                    <Button onClick={handleOpenAdd}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Supplier
+                    </Button>
+                </div>
             </div>
 
             <Card>
@@ -294,6 +333,57 @@ export const SuppliersPage = () => {
                         <Button onClick={handleSave} disabled={submitting}>
                             {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                             Save Supplier
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Bulk Supplier Upload Modal */}
+            <Modal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                title="Bulk Supplier Upload"
+                description="Upload a CSV file to add multiple suppliers at once."
+            >
+                <div className="space-y-6 pt-4">
+                    <div
+                        className="p-4 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <FileUp className="h-8 w-8 text-muted-foreground" />
+                        <span className="text-sm font-medium">
+                            {importFile ? importFile.name : 'Click to select CSV file'}
+                        </span>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".csv"
+                            onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <h4 className="text-sm font-semibold">Instructions:</h4>
+                        <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                            <li>File must be in <strong>CSV</strong> format.</li>
+                            <li><strong>supplierName</strong> is required for every vendor.</li>
+                            <li>Columns: <code>supplierName,contactPerson,phoneNumber,email,gstin,address,notes</code></li>
+                        </ul>
+                    </div>
+
+                    <Button variant="outline" size="sm" className="w-full" onClick={downloadSampleCSV}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Sample Template
+                    </Button>
+
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button variant="outline" onClick={() => setIsImportModalOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleImport} disabled={!importFile || importing}>
+                            {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+                            Start Upload
                         </Button>
                     </div>
                 </div>

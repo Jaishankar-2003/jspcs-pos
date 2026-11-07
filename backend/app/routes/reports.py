@@ -23,27 +23,36 @@ def get_reports_summary(
 
     now = datetime.now(timezone.utc)
     query = db.query(models.Sale)
+    returns_query = db.query(models.SalesReturn)
 
     if range_type == "today":
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         query = query.filter(models.Sale.created_at >= today_start)
+        returns_query = returns_query.filter(models.SalesReturn.created_at >= today_start)
     elif range_type == "week":
         week_start = now - timedelta(days=7)
         query = query.filter(models.Sale.created_at >= week_start)
+        returns_query = returns_query.filter(models.SalesReturn.created_at >= week_start)
     elif range_type == "month":
         month_start = now - timedelta(days=30)
         query = query.filter(models.Sale.created_at >= month_start)
+        returns_query = returns_query.filter(models.SalesReturn.created_at >= month_start)
     elif range_type == "custom" and start_date and end_date:
         query = query.filter(
             models.Sale.created_at >= start_date,
             models.Sale.created_at <= end_date
         )
+        returns_query = returns_query.filter(
+            models.SalesReturn.created_at >= start_date,
+            models.SalesReturn.created_at <= end_date
+        )
 
     sales = query.all()
+    returns = returns_query.all()
 
-    total_revenue = Decimal("0.00")
+    gross_revenue = Decimal("0.00")
     total_cogs = Decimal("0.00")
-    total_tax = Decimal("0.00")
+    gross_tax = Decimal("0.00")
     total_discount = Decimal("0.00")
     total_transactions = len(sales)
 
@@ -51,8 +60,8 @@ def get_reports_summary(
     product_sales_map = {}
 
     for s in sales:
-        total_revenue += s.total_amount
-        total_tax += s.tax_amount or Decimal("0.00")
+        gross_revenue += s.total_amount
+        gross_tax += s.tax_amount or Decimal("0.00")
         total_discount += s.discount_amount or Decimal("0.00")
 
         for item in s.items:
@@ -71,9 +80,42 @@ def get_reports_summary(
             product_sales_map[p_name]["quantity"] += item.quantity
             product_sales_map[p_name]["revenue"] += item.subtotal
 
-    avg_ticket = (total_revenue / total_transactions).quantize(Decimal("0.01")) if total_transactions > 0 else Decimal("0.00")
-    gross_profit = total_revenue - total_tax - total_cogs
-    profit_margin = ((gross_profit / total_revenue) * 100).quantize(Decimal("0.1")) if total_revenue > 0 else Decimal("0.0")
+    # Reconcile Sales Returns, Reversals, and Damaged Losses
+    total_refunds = Decimal("0.00")
+    tax_reversed = Decimal("0.00")
+    cogs_reversed = Decimal("0.00")
+    damaged_goods_loss = Decimal("0.00")
+
+    for r in returns:
+        total_refunds += r.total_refund_amount or Decimal("0.00")
+        for r_item in r.items:
+            item_tax_rev = r_item.tax_amount or Decimal("0.00")
+            tax_reversed += item_tax_rev
+            u_cost = r_item.unit_cost if r_item.unit_cost and r_item.unit_cost > 0 else (
+                r_item.product.cost_price if r_item.product and r_item.product.cost_price else Decimal("0.00")
+            )
+            line_cost = u_cost * r_item.quantity
+            if (r_item.condition or "SELLABLE").upper() == "SELLABLE":
+                cogs_reversed += line_cost
+            else:
+                damaged_goods_loss += line_cost
+
+            # Net impact on top categories and products
+            cat = r_item.product.category if r_item.product and r_item.product.category else "General"
+            if cat in category_sales_map:
+                category_sales_map[cat] = max(Decimal("0.00"), category_sales_map[cat] - (r_item.refund_subtotal or Decimal("0.00")))
+
+            p_name = r_item.product.name if r_item.product else "Item"
+            if p_name in product_sales_map:
+                product_sales_map[p_name]["quantity"] = max(0, product_sales_map[p_name]["quantity"] - r_item.quantity)
+                product_sales_map[p_name]["revenue"] = max(Decimal("0.00"), product_sales_map[p_name]["revenue"] - (r_item.refund_subtotal or Decimal("0.00")))
+
+    net_revenue = max(Decimal("0.00"), gross_revenue - total_refunds)
+    net_tax = max(Decimal("0.00"), gross_tax - tax_reversed)
+    net_cogs = max(Decimal("0.00"), total_cogs - cogs_reversed)
+    gross_profit = net_revenue - net_tax - net_cogs - damaged_goods_loss
+    avg_ticket = (net_revenue / total_transactions).quantize(Decimal("0.01")) if total_transactions > 0 else Decimal("0.00")
+    profit_margin = ((gross_profit / net_revenue) * 100).quantize(Decimal("0.1")) if net_revenue > 0 else Decimal("0.0")
 
     # Format top categories
     sorted_categories = sorted(category_sales_map.items(), key=lambda x: x[1], reverse=True)[:5]
@@ -113,13 +155,23 @@ def get_reports_summary(
 
     return {
         "rangeType": range_type,
-        "totalRevenue": total_revenue,
+        "totalRevenue": net_revenue,
+        "grossRevenue": gross_revenue,
+        "salesReturns": total_refunds,
+        "netRevenue": net_revenue,
         "totalTransactions": total_transactions,
         "averageTicket": avg_ticket,
-        "totalCOGS": total_cogs,
+        "totalCOGS": net_cogs,
+        "grossCOGS": total_cogs,
+        "cogsReversed": cogs_reversed,
+        "netCOGS": net_cogs,
+        "damagedGoodsLoss": damaged_goods_loss,
         "grossProfit": gross_profit,
         "profitMarginPercent": profit_margin,
-        "totalTax": total_tax,
+        "totalTax": net_tax,
+        "grossTax": gross_tax,
+        "taxReversed": tax_reversed,
+        "netTax": net_tax,
         "totalDiscount": total_discount,
         "topCategories": top_categories,
         "topProducts": top_products,

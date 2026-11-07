@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.routes.auth import get_current_user
 from app.services.invoice_service import generate_invoice_pdf
+from app.services.gst_service import calculate_item_gst
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta, date
 from sqlalchemy import func
 from app.websocket_manager import manager
+import os
 
 router = APIRouter()
 
@@ -25,6 +28,10 @@ def format_sale_response(s: models.Sale) -> dict:
     for item in s.items:
         product_name = item.product.name if item.product else "Item"
         category = item.product.category if item.product and item.product.category else "General"
+        hsn_code = getattr(item.product, "hsn_code", None) if item.product else None
+        unit = getattr(item.product, "unit_of_measure", "unit") if item.product else "unit"
+        gst_rate = getattr(item.product, "gst_rate", Decimal("0.00")) if item.product else Decimal("0.00")
+        mrp = getattr(item.product, "mrp", None) if item.product else None
         items.append({
             "product_id": str(item.product_id),
             "productId": str(item.product_id),
@@ -34,11 +41,27 @@ def format_sale_response(s: models.Sale) -> dict:
             "quantity": item.quantity,
             "unit_price": item.unit_price,
             "unitPrice": item.unit_price,
+            "mrp": mrp,
+            "hsn_code": hsn_code,
+            "hsnCode": hsn_code,
+            "unit": unit,
+            "unitOfMeasure": unit,
+            "gst_rate": gst_rate,
+            "gstRate": gst_rate,
             "discount": item.discount_amount or Decimal("0.00"),
+            "discountAmount": item.discount_amount or Decimal("0.00"),
             "tax": item.tax_amount or Decimal("0.00"),
+            "taxAmount": item.tax_amount or Decimal("0.00"),
+            "cgst_amount": item.cgst_amount or Decimal("0.00"),
+            "cgstAmount": item.cgst_amount or Decimal("0.00"),
+            "sgst_amount": item.sgst_amount or Decimal("0.00"),
+            "sgstAmount": item.sgst_amount or Decimal("0.00"),
+            "igst_amount": item.igst_amount or Decimal("0.00"),
+            "igstAmount": item.igst_amount or Decimal("0.00"),
             "subtotal": item.subtotal,
-            "finalAmount": item.subtotal,
-            "total": item.subtotal,
+            "taxableAmount": item.subtotal,
+            "finalAmount": item.subtotal + (item.tax_amount or Decimal("0.00")),
+            "total": item.subtotal + (item.tax_amount or Decimal("0.00")),
             "batch_number": item.batch.batch_number if item.batch else None
         })
 
@@ -51,6 +74,9 @@ def format_sale_response(s: models.Sale) -> dict:
         "grandTotal": s.total_amount,
         "subtotal": s.subtotal or s.total_amount,
         "totalTaxAmount": s.tax_amount or Decimal("0.00"),
+        "cgstAmount": s.cgst_amount or Decimal("0.00"),
+        "sgstAmount": s.sgst_amount or Decimal("0.00"),
+        "igstAmount": s.igst_amount or Decimal("0.00"),
         "discountAmount": s.discount_amount or Decimal("0.00"),
         "paymentMode": s.payment_mode or "CASH",
         "customerName": s.customer_name or "Walk-in",
@@ -74,17 +100,21 @@ async def checkout(
     now_utc = datetime.now(timezone.utc)
     gross_subtotal = Decimal("0.00")
     total_tax = Decimal("0.00")
+    total_cgst = Decimal("0.00")
+    total_sgst = Decimal("0.00")
+    total_igst = Decimal("0.00")
     sale_items_data = []
 
-    # Check for active cashier shift (first by current user, then fallback to any open shift on register)
+    # Mandatory Check: Cashier must have an active shift to complete billing (Phase 2)
     active_shift = db.query(models.CashierShift).filter(
         models.CashierShift.cashier_id == current_user.id,
         models.CashierShift.status == "OPEN"
     ).first()
     if not active_shift:
-        active_shift = db.query(models.CashierShift).filter(
-            models.CashierShift.status == "OPEN"
-        ).order_by(models.CashierShift.opened_at.desc()).first()
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot complete sale without an active cashier shift. Please open your shift first."
+        )
 
     # Process items and lock stock records with_for_update()
     for item in request.items:
@@ -115,15 +145,37 @@ async def checkout(
         
         raw_line_total = unit_price * item.quantity
         line_discount = (raw_line_total * item_discount_percent / Decimal("100.00")).quantize(Decimal("0.01"))
-        line_subtotal = raw_line_total - line_discount
-        gross_subtotal += line_subtotal
+        
+        # Centralized GST Engine calculation (Phase 6)
+        is_incl = getattr(db_product, "is_inclusive", False) or False
+        is_inter = bool(request.isInterstate) if hasattr(request, "isInterstate") and request.isInterstate else False
+        tax_t = getattr(db_product, "tax_type", "TAXABLE") or "TAXABLE"
+        c_cgst = getattr(db_product, "custom_cgst_rate", None)
+        c_sgst = getattr(db_product, "custom_sgst_rate", None)
 
-        # Tax calculation
-        if db_product.is_taxable and db_product.gst_rate > 0:
-            line_tax = (line_subtotal * db_product.gst_rate / Decimal("100.00")).quantize(Decimal("0.01"))
-            total_tax += line_tax
-        else:
-            line_tax = Decimal("0.00")
+        gst_breakdown = calculate_item_gst(
+            unit_price=unit_price,
+            quantity=item.quantity,
+            gst_rate=db_product.gst_rate or Decimal("0.00"),
+            discount_amount=line_discount,
+            is_inclusive=is_incl,
+            is_interstate=is_inter,
+            is_taxable=bool(db_product.is_taxable),
+            tax_type=tax_t,
+            custom_cgst_rate=c_cgst,
+            custom_sgst_rate=c_sgst
+        )
+        line_tax = gst_breakdown.tax_amount
+        line_cgst = gst_breakdown.cgst_amount
+        line_sgst = gst_breakdown.sgst_amount
+        line_igst = gst_breakdown.igst_amount
+        line_subtotal = gst_breakdown.taxable_amount
+
+        total_tax += line_tax
+        total_cgst += line_cgst
+        total_sgst += line_sgst
+        total_igst += line_igst
+        gross_subtotal += line_subtotal
 
         # FEFO Batch Allocation (Feature F)
         allocated_batch = None
@@ -153,6 +205,9 @@ async def checkout(
             "unit_cost": db_product.cost_price or Decimal("0.00"),
             "discount_amount": line_discount,
             "tax_amount": line_tax,
+            "cgst_amount": line_cgst,
+            "sgst_amount": line_sgst,
+            "igst_amount": line_igst,
             "subtotal": line_subtotal,
             "batch": allocated_batch,
             "previous_qty": current_qty
@@ -179,6 +234,9 @@ async def checkout(
         total_amount=total_amount,
         subtotal=gross_subtotal,
         tax_amount=total_tax,
+        cgst_amount=total_cgst,
+        sgst_amount=total_sgst,
+        igst_amount=total_igst,
         discount_amount=bill_discount,
         discount_percent=request.discountPercent or Decimal("0.00"),
         discount_reason=request.discountReason,
@@ -203,6 +261,9 @@ async def checkout(
             unit_cost=data["unit_cost"],
             discount_amount=data["discount_amount"],
             tax_amount=data["tax_amount"],
+            cgst_amount=data.get("cgst_amount", Decimal("0.00")),
+            sgst_amount=data.get("sgst_amount", Decimal("0.00")),
+            igst_amount=data.get("igst_amount", Decimal("0.00")),
             subtotal=data["subtotal"]
         )
         db.add(sale_item)
@@ -246,21 +307,21 @@ async def checkout(
     # Generate PDF Invoice via ReportLab
     invoice_path = generate_invoice_pdf(new_sale, final_items_for_pdf, current_user.full_name or current_user.username)
 
-    # Calculate today's total revenue for WebSocket broadcast
+    # Calculate today's net revenue for WebSocket broadcast
     today = date.today()
-    query = db.query(func.sum(models.Sale.total_amount)).filter(
-        func.date(models.Sale.created_at) == today
-    )
+    q_s = db.query(func.sum(models.Sale.total_amount)).filter(func.date(models.Sale.created_at) == today)
+    q_r = db.query(func.sum(models.SalesReturn.total_refund_amount)).filter(func.date(models.SalesReturn.created_at) == today)
     if manager.last_cleared_timestamp:
-        query = query.filter(models.Sale.created_at >= manager.last_cleared_timestamp)
+        q_s = q_s.filter(models.Sale.created_at >= manager.last_cleared_timestamp)
+        q_r = q_r.filter(models.SalesReturn.created_at >= manager.last_cleared_timestamp)
         
-    today_revenue = query.scalar() or Decimal("0.00")
+    today_net = float(q_s.scalar() or 0) - float(q_r.scalar() or 0)
 
     await manager.broadcast({
         "type": "INVOICE_CREATED",
         "cashierName": current_user.username,
         "amount": float(total_amount),
-        "totalRevenue": float(today_revenue)
+        "totalRevenue": max(0.0, float(today_net))
     })
 
     return {
@@ -281,3 +342,14 @@ def get_sale(id: str, db: Session = Depends(get_db), current_user: models.User =
     if not sale:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return format_sale_response(sale)
+
+@router.get("/invoices/{id}/pdf")
+def download_invoice_pdf(id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    sale = db.query(models.Sale).filter(models.Sale.id == id).first()
+    if not sale:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    cashier_name = sale.cashier.full_name or sale.cashier.username if sale.cashier else "admin"
+    pdf_path = generate_invoice_pdf(sale, sale.items, cashier_name)
+    invoice_num = sale.invoice_number or sale.id
+    return FileResponse(pdf_path, media_type="application/pdf", filename=f"{invoice_num}.pdf")

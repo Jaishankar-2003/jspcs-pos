@@ -10,7 +10,12 @@ import {
     Download,
     Filter,
     CheckSquare,
-    Square
+    Square,
+    Calculator,
+    Percent,
+    Tag,
+    AlertCircle,
+    CheckCircle2
 } from 'lucide-react';
 import {
     Table,
@@ -39,6 +44,7 @@ export const ProductsPage = () => {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [importFile, setImportFile] = useState<File | null>(null);
     const [importing, setImporting] = useState(false);
+    const [isCustomGst, setIsCustomGst] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,10 +62,18 @@ export const ProductsPage = () => {
         name: '',
         category: '',
         subCategory: '',
+        costPrice: '0',
         price: '',
-        stock: '',
-        unit: '',
-        gstRate: '18'
+        mrp: '',
+        targetMargin: '10',
+        stock: '0',
+        unit: 'unit',
+        gstRate: '18',
+        isInclusive: false,
+        taxType: 'TAXABLE',
+        customCgstRate: '',
+        customSgstRate: '',
+        lowStockThreshold: '10'
     });
 
     const fetchProducts = async () => {
@@ -90,35 +104,107 @@ export const ProductsPage = () => {
 
     const handleOpenAdd = () => {
         setEditingProduct(null);
-        setFormData({ sku: '', name: '', category: '', subCategory: '', price: '', stock: '', unit: '', gstRate: '18' });
+        setIsCustomGst(false);
+        setFormData({
+            sku: '',
+            name: '',
+            category: '',
+            subCategory: '',
+            costPrice: '0',
+            price: '',
+            mrp: '',
+            targetMargin: '10',
+            stock: '0',
+            unit: 'unit',
+            gstRate: '18',
+            isInclusive: false,
+            taxType: 'TAXABLE',
+            customCgstRate: '9',
+            customSgstRate: '9',
+            lowStockThreshold: '10'
+        });
         setIsModalOpen(true);
     };
 
     const handleOpenEdit = (product: Product) => {
         setEditingProduct(product);
+        const rateStr = product.gstRate !== undefined && product.gstRate !== null ? product.gstRate.toString() : '18';
+        const hasCustomRate = !['0', '5', '12', '18', '28'].includes(rateStr) || Boolean(product.customCgstRate || product.customSgstRate);
+        setIsCustomGst(hasCustomRate);
         setFormData({
             sku: product.sku || '',
             name: product.name || '',
             category: product.category || '',
             subCategory: product.subCategory || '',
+            costPrice: product.costPrice?.toString() || '0',
             price: product.sellingPrice?.toString() || '0',
+            mrp: product.mrp?.toString() || '',
+            targetMargin: '10',
             stock: product.currentStock?.toString() || '0',
-            unit: product.unitOfMeasure || '',
-            gstRate: product.gstRate?.toString() || '18'
+            unit: product.unitOfMeasure || 'unit',
+            gstRate: rateStr,
+            isInclusive: Boolean(product.isInclusive),
+            taxType: product.taxType || 'TAXABLE',
+            customCgstRate: product.customCgstRate?.toString() || (hasCustomRate ? (parseFloat(rateStr) / 2).toString() : ''),
+            customSgstRate: product.customSgstRate?.toString() || (hasCustomRate ? (parseFloat(rateStr) / 2).toString() : ''),
+            lowStockThreshold: product.low_stock_threshold?.toString() || '10'
         });
         setIsModalOpen(true);
     };
 
     const handleSaveProduct = async () => {
         try {
-            const payload = {
+            if (!formData.name || !formData.price) {
+                toast.error("Product name and selling price are required");
+                return;
+            }
+            const sPrice = parseFloat(formData.price);
+            const cPrice = parseFloat(formData.costPrice || '0');
+            const mrpPrice = formData.mrp ? parseFloat(formData.mrp) : undefined;
+
+            if (sPrice < 0 || cPrice < 0) {
+                toast.error("Price and cost cannot be negative");
+                return;
+            }
+
+            if (mrpPrice !== undefined) {
+                if (mrpPrice < 0) {
+                    toast.error("MRP cannot be negative");
+                    return;
+                }
+                if (mrpPrice > 0 && sPrice > mrpPrice) {
+                    toast.error("Selling price cannot exceed Maximum Retail Price (MRP)");
+                    return;
+                }
+            }
+
+            const isCustom = isCustomGst || !['0', '5', '12', '18', '28'].includes(formData.gstRate);
+            if (isCustom && formData.taxType === 'TAXABLE') {
+                const cgst = parseFloat(formData.customCgstRate) || 0;
+                const sgst = parseFloat(formData.customSgstRate) || 0;
+                const total = parseFloat(formData.gstRate) || 0;
+                if (Math.abs((cgst + sgst) - total) > 0.01) {
+                    toast.error(`CGST (${cgst}%) + SGST (${sgst}%) must equal Total GST (${total}%)`);
+                    return;
+                }
+            }
+
+            const totalGst = formData.taxType !== 'TAXABLE' ? 0 : (parseFloat(formData.gstRate) || 0);
+            const payload: any = {
                 sku: formData.sku,
                 name: formData.name,
                 category: formData.category,
                 subCategory: formData.subCategory,
-                sellingPrice: parseFloat(formData.price),
-                gstRate: parseFloat(formData.gstRate),
-                currentStock: parseInt(formData.stock),
+                costPrice: cPrice,
+                sellingPrice: sPrice,
+                mrp: mrpPrice,
+                gstRate: totalGst,
+                isInclusive: formData.isInclusive,
+                taxType: formData.taxType || 'TAXABLE',
+                customCgstRate: isCustom && formData.customCgstRate ? parseFloat(formData.customCgstRate) : undefined,
+                customSgstRate: isCustom && formData.customSgstRate ? parseFloat(formData.customSgstRate) : undefined,
+                low_stock_threshold: parseInt(formData.lowStockThreshold) || 10,
+                currentStock: parseInt(formData.stock) || 0,
                 unitOfMeasure: formData.unit || 'unit'
             };
 
@@ -131,9 +217,9 @@ export const ProductsPage = () => {
             }
             setIsModalOpen(false);
             fetchProducts();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to save product', error);
-            toast.error('Failed to save product.');
+            toast.error(error.response?.data?.detail || 'Failed to save product.');
         }
     };
 
@@ -218,8 +304,8 @@ export const ProductsPage = () => {
     };
 
     const downloadSampleCSV = () => {
-        const headers = "sku,name,category,brand,unitOfMeasure,sellingPrice,gstRate,hsnCode,isTaxable,currentStock,lowStockThreshold\n";
-        const sample = "SKU-101,Sample Product,Groceries,BrandX,kg,150.00,18,HSN123,true,50,10\nSKU-102,Another Product,Electronics,BrandY,unit,2500.00,12,HSN456,true,5,2";
+        const headers = "sku,name,category,brand,unitOfMeasure,costPrice,sellingPrice,mrp,gstRate,isInclusive,hsnCode,isTaxable,currentStock,lowStockThreshold\n";
+        const sample = "SKU-101,Sample Product,Groceries,BrandX,kg,120.00,150.00,160.00,18,false,HSN123,true,50,10\nSKU-102,Another Product,Electronics,BrandY,unit,2000.00,2500.00,2800.00,12,true,HSN456,true,5,2";
         const blob = new Blob([headers + sample], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -339,7 +425,7 @@ export const ProductsPage = () => {
                                         <TableHead>SKU</TableHead>
                                         <TableHead>Product Name</TableHead>
                                         <TableHead>Category</TableHead>
-                                        <TableHead className="text-right">Price</TableHead>
+                                        <TableHead className="text-right">Price / MRP</TableHead>
                                         <TableHead className="text-right">Stock</TableHead>
                                         <TableHead className="text-right">Unit</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
@@ -367,7 +453,12 @@ export const ProductsPage = () => {
                                                     {product.category || 'Uncategorized'}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className="text-right">₹{(product.sellingPrice || 0).toLocaleString()}</TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="font-semibold">₹{(product.sellingPrice || 0).toLocaleString()}</div>
+                                                {product.mrp && product.mrp > 0 ? (
+                                                    <div className="text-[11px] text-muted-foreground">MRP: ₹{product.mrp.toLocaleString()}</div>
+                                                ) : null}
+                                            </TableCell>
                                             <TableCell className="text-right font-bold">
                                                 <span className={cn(
                                                     (product.currentStock || 0) <= 10 ? "text-rose-500" : "text-foreground"
@@ -448,98 +539,516 @@ export const ProductsPage = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title={editingProduct ? "Edit Product" : "Add New Product"}
-                description={editingProduct ? "Update product information." : "Fill in the details to add a product to your catalog."}
+                description={editingProduct ? "Update catalog product, pricing, and Indian GST configuration." : "Add a new product with complete pricing, Indian GST rates, and inventory controls."}
+                className="max-w-3xl"
             >
-                <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">SKU/Barcode</label>
-                            <Input
-                                placeholder="PROD-000"
-                                value={formData.sku}
-                                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                            />
+                <div className="space-y-5 max-h-[80vh] overflow-y-auto pr-1">
+                    {/* Group 1: Basic Information */}
+                    <div className="p-3.5 rounded-lg border bg-muted/20 space-y-3">
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">1. Basic Information</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium">SKU / Barcode *</label>
+                                <Input
+                                    placeholder="PROD-000"
+                                    value={formData.sku}
+                                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-primary">Category *</label>
+                                <Input
+                                    placeholder="e.g. Beverages"
+                                    value={formData.category}
+                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                    list="category-list"
+                                />
+                                <datalist id="category-list">
+                                    {uniqueCategories.map(cat => (
+                                        <option key={cat} value={cat} />
+                                    ))}
+                                </datalist>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-primary">Category</label>
-                            <Input
-                                placeholder="e.g. Beverages"
-                                value={formData.category}
-                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                list="category-list"
-                            />
-                            <datalist id="category-list">
-                                {uniqueCategories.map(cat => (
-                                    <option key={cat} value={cat} />
-                                ))}
-                            </datalist>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-primary">Sub Category</label>
+                                <Input
+                                    placeholder="e.g. Soft Drinks"
+                                    value={formData.subCategory}
+                                    onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                                    list="subcategory-list"
+                                />
+                                <datalist id="subcategory-list">
+                                    {uniqueSubCategories.map(sub => (
+                                        <option key={sub} value={sub} />
+                                    ))}
+                                </datalist>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-primary">Unit of Measure</label>
+                                <Input
+                                    placeholder="e.g. unit, kg, box"
+                                    value={formData.unit}
+                                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                                    list="unit-list"
+                                />
+                                <datalist id="unit-list">
+                                    {uniqueUnits.map(unit => (
+                                        <option key={unit} value={unit} />
+                                    ))}
+                                    <option value="unit" />
+                                    <option value="kg" />
+                                    <option value="gram" />
+                                    <option value="box" />
+                                    <option value="litre" />
+                                    <option value="ml" />
+                                </datalist>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-primary">Sub Category (Optional)</label>
+
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium">Product Name *</label>
                             <Input
-                                placeholder="e.g. Soft Drinks"
-                                value={formData.subCategory}
-                                onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
-                                list="subcategory-list"
+                                placeholder="Enter full product name"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             />
-                            <datalist id="subcategory-list">
-                                {uniqueSubCategories.map(sub => (
-                                    <option key={sub} value={sub} />
-                                ))}
-                            </datalist>
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Product Name</label>
-                        <Input
-                            placeholder="Enter product name"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Price (₹)</label>
-                            <Input
-                                type="number"
-                                placeholder="0.00"
-                                value={formData.price}
-                                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                            />
+
+                    {/* Live Pricing, Margin, MRP & Indian GST Calculations */}
+                    {(() => {
+                        const cost = parseFloat(formData.costPrice || '0') || 0;
+                        const sell = parseFloat(formData.price || '0') || 0;
+                        const mrp = formData.mrp ? parseFloat(formData.mrp) : null;
+                        const isTaxable = formData.taxType === 'TAXABLE';
+                        const gstRate = isTaxable ? (parseFloat(formData.gstRate) || 0) : 0;
+                        const isInclusive = formData.isInclusive;
+
+                        // Taxable value and output GST
+                        let taxableSellingValue = sell;
+                        let outputGst = 0;
+                        let customerPays = sell;
+
+                        if (!isTaxable || gstRate <= 0) {
+                            taxableSellingValue = sell;
+                            outputGst = 0;
+                            customerPays = sell;
+                        } else if (isInclusive) {
+                            taxableSellingValue = sell / (1 + gstRate / 100);
+                            outputGst = sell - taxableSellingValue;
+                            customerPays = sell;
+                        } else {
+                            taxableSellingValue = sell;
+                            outputGst = sell * (gstRate / 100);
+                            customerPays = sell + outputGst;
+                        }
+
+                        // CGST & SGST Split
+                        const isCustom = isCustomGst || !['0', '5', '12', '18', '28'].includes(formData.gstRate);
+                        let cgstRate = gstRate / 2;
+                        if (isCustom && formData.customCgstRate && formData.customSgstRate) {
+                            cgstRate = parseFloat(formData.customCgstRate) || (gstRate / 2);
+                        }
+                        const cgstAmount = outputGst > 0 && gstRate > 0 ? (outputGst * (cgstRate / gstRate)) : 0;
+                        const sgstAmount = outputGst - cgstAmount;
+
+                        // Profit & Margins
+                        const profitAvailable = cost > 0;
+                        const profitPerUnit = taxableSellingValue - cost;
+                        const profitMargin = taxableSellingValue > 0 ? (profitPerUnit / taxableSellingValue) * 100 : 0;
+                        const markup = cost > 0 ? (profitPerUnit / cost) * 100 : 0;
+
+                        // MRP Discount
+                        const hasMrp = mrp !== null && mrp > 0;
+                        const discountFromMrp = hasMrp ? Math.max(0, mrp - customerPays) : 0;
+                        const discountPercentage = hasMrp && mrp > 0 ? (discountFromMrp / mrp) * 100 : 0;
+                        const exceedsMrp = hasMrp && customerPays > mrp;
+
+                        // Target Margin Suggestion
+                        const targetMarginPct = parseFloat(formData.targetMargin || '0') || 0;
+                        let suggestedPrice = 0;
+                        if (cost > 0 && targetMarginPct > 0 && targetMarginPct < 100) {
+                            const suggestedTaxable = cost / (1 - targetMarginPct / 100);
+                            suggestedPrice = (isInclusive && isTaxable && gstRate > 0) ? suggestedTaxable * (1 + gstRate / 100) : suggestedTaxable;
+                        }
+
+                        return (
+                            <>
+                                {/* Group 2: Pricing & Profit Margin */}
+                                <div className="p-3.5 rounded-lg border bg-muted/20 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                            <Tag className="h-3.5 w-3.5 text-primary" /> 2. Pricing & Profit Margin
+                                        </h4>
+                                        <div className="flex items-center gap-2">
+                                            {profitAvailable ? (
+                                                <span className={`text-xs px-2 py-0.5 rounded font-bold border ${
+                                                    profitMargin >= 0 ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                                                }`}>
+                                                    Margin: {profitMargin.toFixed(1)}% | Markup: {markup.toFixed(1)}%
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground border">
+                                                    Cost not available
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-medium">Cost Price (₹)</label>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                placeholder="0.00"
+                                                value={formData.costPrice}
+                                                onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
+                                            />
+                                            <span className="text-[10px] text-muted-foreground">Base cost excl. recoverable GST</span>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-medium">Maximum Retail Price (MRP) (₹)</label>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                placeholder="Optional (e.g. 1100.00)"
+                                                value={formData.mrp}
+                                                onChange={(e) => setFormData({ ...formData, mrp: e.target.value })}
+                                            />
+                                            <span className="text-[10px] text-muted-foreground">Printed package MRP (tax-inclusive)</span>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-medium">Selling Price (₹) *</label>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                placeholder="0.00"
+                                                value={formData.price}
+                                                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                            />
+                                            <span className="text-[10px] text-muted-foreground">Configured customer price</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Warnings if Selling Price exceeds MRP */}
+                                    {exceedsMrp && (
+                                        <div className="flex items-center gap-2 p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 text-xs font-medium">
+                                            <AlertCircle className="h-4 w-4 shrink-0" />
+                                            <span>
+                                                Warning: Customer price (₹{customerPays.toFixed(2)}) exceeds MRP (₹{mrp?.toFixed(2)}). Under Indian Legal Metrology Rules, packaged goods cannot be sold above MRP!
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Target Margin & Price Suggestion */}
+                                    <div className="p-2.5 rounded-lg border bg-background/60 space-y-2">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-xs font-medium text-muted-foreground">Target Margin (%):</label>
+                                                <Input
+                                                    type="number"
+                                                    step="0.5"
+                                                    min="1"
+                                                    max="99"
+                                                    className="w-20 h-7 text-xs"
+                                                    value={formData.targetMargin}
+                                                    onChange={(e) => setFormData({ ...formData, targetMargin: e.target.value })}
+                                                />
+                                            </div>
+                                            {cost > 0 && suggestedPrice > 0 ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Suggested Price: <strong className="text-foreground">₹{suggestedPrice.toFixed(2)}</strong>
+                                                    </span>
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="secondary"
+                                                        className="h-7 text-xs px-2 font-medium"
+                                                        onClick={() => setFormData({ ...formData, price: suggestedPrice.toFixed(2) })}
+                                                    >
+                                                        Apply Suggested Price
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground italic">
+                                                    Enter cost price and target margin to calculate suggested selling price
+                                                </span>
+                                            )}
+                                        </div>
+                                        {hasMrp && suggestedPrice > (mrp || 0) && (
+                                            <p className="text-[11px] text-amber-600">
+                                                ⚠️ Suggested price (₹{suggestedPrice.toFixed(2)}) is higher than MRP (₹{mrp?.toFixed(2)}). Consider lowering margin target.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Group 3: Indian GST & Tax */}
+                                <div className="p-3.5 rounded-lg border bg-muted/20 space-y-3">
+                                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                        <Percent className="h-3.5 w-3.5 text-primary" /> 3. Indian GST & Tax Configuration
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-medium">Tax Classification</label>
+                                            <select
+                                                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                value={formData.taxType}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val !== 'TAXABLE') {
+                                                        setIsCustomGst(false);
+                                                        setFormData({
+                                                            ...formData,
+                                                            taxType: val,
+                                                            gstRate: '0',
+                                                            customCgstRate: '0',
+                                                            customSgstRate: '0'
+                                                        });
+                                                    } else {
+                                                        setFormData({
+                                                            ...formData,
+                                                            taxType: val,
+                                                            gstRate: '18',
+                                                            customCgstRate: '9',
+                                                            customSgstRate: '9'
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                <option value="TAXABLE">Taxable (Standard GST)</option>
+                                                <option value="NIL_RATED">Nil-Rated (0% GST)</option>
+                                                <option value="EXEMPT">Exempt from GST</option>
+                                                <option value="NON_GST">Non-GST Supply</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-medium">GST Rate (%)</label>
+                                            <select
+                                                disabled={formData.taxType !== 'TAXABLE'}
+                                                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+                                                value={isCustomGst ? 'custom' : (['0', '5', '12', '18', '28'].includes(formData.gstRate) ? formData.gstRate : 'custom')}
+                                                onChange={(e) => {
+                                                    if (e.target.value === 'custom') {
+                                                        setIsCustomGst(true);
+                                                        const curRate = parseFloat(formData.gstRate) || 0;
+                                                        const half = curRate > 0 ? (curRate / 2).toFixed(2).replace(/\.00$/, '') : '0';
+                                                        setFormData({
+                                                            ...formData,
+                                                            customCgstRate: formData.customCgstRate || half,
+                                                            customSgstRate: formData.customSgstRate || half
+                                                        });
+                                                    } else {
+                                                        setIsCustomGst(false);
+                                                        const rateVal = parseFloat(e.target.value) || 0;
+                                                        const half = rateVal > 0 ? (rateVal / 2).toFixed(2).replace(/\.00$/, '') : '0';
+                                                        setFormData({
+                                                            ...formData,
+                                                            gstRate: e.target.value,
+                                                            customCgstRate: half,
+                                                            customSgstRate: half
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                <option value="0">0% (Nil / Exempt)</option>
+                                                <option value="5">5% GST (CGST 2.5% + SGST 2.5%)</option>
+                                                <option value="12">12% GST (CGST 6% + SGST 6%)</option>
+                                                <option value="18">18% GST (CGST 9% + SGST 9%)</option>
+                                                <option value="28">28% GST (CGST 14% + SGST 14%)</option>
+                                                <option value="custom">Custom Rate...</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-medium">Pricing Tax Mode</label>
+                                            <div className="flex flex-col gap-1 pt-0.5">
+                                                <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                                                    <input
+                                                        type="radio"
+                                                        name="taxMode"
+                                                        checked={!formData.isInclusive}
+                                                        onChange={() => setFormData({ ...formData, isInclusive: false })}
+                                                    />
+                                                    <span>GST Exclusive (+ tax)</span>
+                                                </label>
+                                                <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                                                    <input
+                                                        type="radio"
+                                                        name="taxMode"
+                                                        checked={formData.isInclusive}
+                                                        onChange={() => setFormData({ ...formData, isInclusive: true })}
+                                                    />
+                                                    <span>GST Inclusive (tax included)</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Custom GST Rate Configuration */}
+                                    {isCustom && formData.taxType === 'TAXABLE' && (
+                                        <div className="p-3 rounded-lg border bg-background/70 space-y-2">
+                                            <div className="text-xs font-semibold text-muted-foreground">Custom Tax Components</div>
+                                            <div className="grid grid-cols-3 gap-3">
+                                                <div className="space-y-1">
+                                                    <label className="text-[11px] font-medium">Total GST Rate (%)</label>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        placeholder="e.g. 7"
+                                                        value={formData.gstRate}
+                                                        onChange={(e) => {
+                                                            const tot = parseFloat(e.target.value) || 0;
+                                                            const half = tot > 0 ? (tot / 2).toFixed(2).replace(/\.00$/, '') : '0';
+                                                            setFormData({
+                                                                ...formData,
+                                                                gstRate: e.target.value,
+                                                                customCgstRate: half,
+                                                                customSgstRate: half
+                                                            });
+                                                        }}
+                                                        className="h-8 text-xs"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[11px] font-medium">CGST Rate (%)</label>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        placeholder="e.g. 3.5"
+                                                        value={formData.customCgstRate}
+                                                        onChange={(e) => setFormData({ ...formData, customCgstRate: e.target.value })}
+                                                        className="h-8 text-xs"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[11px] font-medium">SGST Rate (%)</label>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        placeholder="e.g. 3.5"
+                                                        value={formData.customSgstRate}
+                                                        onChange={(e) => setFormData({ ...formData, customSgstRate: e.target.value })}
+                                                        className="h-8 text-xs"
+                                                    />
+                                                </div>
+                                            </div>
+                                            {(() => {
+                                                const tot = parseFloat(formData.gstRate) || 0;
+                                                const cg = parseFloat(formData.customCgstRate) || 0;
+                                                const sg = parseFloat(formData.customSgstRate) || 0;
+                                                const isValid = Math.abs((cg + sg) - tot) < 0.01;
+                                                return (
+                                                    <div className={`text-[11px] font-medium flex items-center gap-1 ${isValid ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                                        {isValid ? <CheckCircle2 className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+                                                        {isValid
+                                                            ? `Valid split: CGST ${cg}% + SGST ${sg}% = Total ${tot}%`
+                                                            : `Mismatch: CGST (${cg}%) + SGST (${sg}%) = ${(cg + sg).toFixed(2)}%, must equal Total (${tot}%)`}
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Group 4: Live Pricing & Profit Summary */}
+                                <div className="p-3.5 rounded-lg border bg-primary/5 border-primary/20 space-y-3">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                                        <Calculator className="h-3.5 w-3.5" /> 4. Product Pricing & Profit Summary
+                                    </h4>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                        <div className="p-2 bg-background rounded border">
+                                            <span className="text-muted-foreground block text-[11px]">Purchase Cost:</span>
+                                            <span className="font-semibold text-foreground">
+                                                {profitAvailable ? `₹${cost.toFixed(2)}` : 'Cost not available'}
+                                            </span>
+                                        </div>
+                                        <div className="p-2 bg-background rounded border">
+                                            <span className="text-muted-foreground block text-[11px]">Maximum Retail Price (MRP):</span>
+                                            <span className="font-semibold text-foreground">
+                                                {hasMrp ? `₹${mrp?.toFixed(2)}` : 'N/A'}
+                                            </span>
+                                        </div>
+                                        <div className="p-2 bg-background rounded border">
+                                            <span className="text-muted-foreground block text-[11px]">Discount from MRP:</span>
+                                            <span className="font-semibold text-emerald-600">
+                                                {hasMrp ? `₹${discountFromMrp.toFixed(2)} (${discountPercentage.toFixed(1)}%)` : 'N/A'}
+                                            </span>
+                                        </div>
+                                        <div className="p-2 bg-background rounded border">
+                                            <span className="text-muted-foreground block text-[11px]">Selling Price ({isInclusive ? 'Incl.' : 'Excl.'}):</span>
+                                            <span className="font-semibold text-foreground">₹{sell.toFixed(2)}</span>
+                                        </div>
+                                        <div className="p-2 bg-background rounded border">
+                                            <span className="text-muted-foreground block text-[11px]">Taxable Selling Value:</span>
+                                            <span className="font-semibold text-foreground">₹{taxableSellingValue.toFixed(2)}</span>
+                                        </div>
+                                        <div className="p-2 bg-background rounded border">
+                                            <span className="text-muted-foreground block text-[11px]">Output GST ({gstRate}%):</span>
+                                            <span className="font-semibold text-foreground">
+                                                ₹{outputGst.toFixed(2)}
+                                                {gstRate > 0 && (
+                                                    <span className="block text-[10px] text-muted-foreground">
+                                                        (CGST: ₹{cgstAmount.toFixed(2)} | SGST: ₹{sgstAmount.toFixed(2)})
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="p-2 bg-background rounded border">
+                                            <span className="text-muted-foreground block text-[11px]">Customer Pays:</span>
+                                            <span className="font-bold text-foreground">₹{customerPays.toFixed(2)}</span>
+                                        </div>
+                                        <div className="p-2 bg-background rounded border">
+                                            <span className="text-muted-foreground block text-[11px]">Gross Profit per Unit:</span>
+                                            <span className={`font-bold ${profitAvailable && profitPerUnit >= 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                                                {profitAvailable ? `₹${profitPerUnit.toFixed(2)}` : 'Cost not available'}
+                                            </span>
+                                            {profitAvailable && (
+                                                <span className="block text-[10px] text-muted-foreground">
+                                                    Margin: {profitMargin.toFixed(1)}% | Markup: {markup.toFixed(1)}%
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        );
+                    })()}
+
+                    {/* Group 5: Inventory & Stock Control */}
+                    <div className="p-3.5 rounded-lg border bg-muted/20 space-y-3">
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">5. Inventory & Stock Control</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium">Initial / Current Stock Level</label>
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={formData.stock}
+                                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium">Low Stock Alert Threshold</label>
+                                <Input
+                                    type="number"
+                                    placeholder="10"
+                                    value={formData.lowStockThreshold}
+                                    onChange={(e) => setFormData({ ...formData, lowStockThreshold: e.target.value })}
+                                />
+                                <span className="text-[10px] text-muted-foreground">Alerts when sellable stock falls below this</span>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Stock Level</label>
-                            <Input
-                                type="number"
-                                placeholder="0"
-                                value={formData.stock}
-                                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                            />
-                        </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-primary">Unit of Measure (Select or Type New)</label>
-                            <Input
-                                placeholder="e.g. kg, box, unit..."
-                                value={formData.unit}
-                                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                                list="unit-list"
-                            />
-                            <datalist id="unit-list">
-                                {uniqueUnits.map(unit => (
-                                    <option key={unit} value={unit} />
-                                ))}
-                                <option value="kg" />
-                                <option value="gram" />
-                                <option value="unit" />
-                                <option value="box" />
-                                <option value="litre" />
-                                <option value="ml" />
-                            </datalist>
-                        </div>
-                    </div>
-                    <div className="flex justify-end gap-3 pt-4">
+
+                    <div className="flex justify-end gap-3 pt-3 border-t">
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
                         <Button onClick={handleSaveProduct}>{editingProduct ? "Update Product" : "Save Product"}</Button>
                     </div>

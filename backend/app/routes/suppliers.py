@@ -1,11 +1,88 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+import csv
+import io
 from app.database import get_db
 from app import models, schemas
 from app.routes.auth import get_current_user
 
 router = APIRouter()
+
+@router.get("/sample-csv")
+def download_sample_csv():
+    headers = "supplierName,contactPerson,phoneNumber,email,gstin,address,notes\n"
+    sample = 'Sri Lakshmi Traders,Ramesh Kumar,9000000001,ramesh@lakshmitraders.example,33AAAAA0000A1Z5,"Gandhipuram, Coimbatore, Tamil Nadu","Groceries and rice wholesale supplier"\n'
+    return Response(
+        content=headers + sample,
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="suppliers_sample.csv"'}
+    )
+
+@router.post("/bulk")
+async def bulk_upload_suppliers(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    if current_user.role != "ADMIN":
+        raise HTTPException(status_code=403, detail="Only Admins can import suppliers")
+
+    content = await file.read()
+    try:
+        decoded = content.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        decoded = content.decode('latin-1')
+
+    reader = csv.DictReader(io.StringIO(decoded))
+    count = 0
+    errors = []
+
+    for row_idx, raw_row in enumerate(reader, start=1):
+        # Clean keys and strip values
+        row = {str(k).strip(): (str(v).strip() if v is not None else '') for k, v in raw_row.items() if k is not None}
+
+        name = row.get('supplierName') or row.get('name') or row.get('supplier_name') or row.get('company_name') or ''
+        if not name:
+            if any(row.values()):
+                errors.append(f"Row {row_idx}: Missing supplier name")
+            continue
+
+        savepoint = db.begin_nested()
+        try:
+            existing = db.query(models.Supplier).filter(models.Supplier.name == name).first()
+            if existing:
+                errors.append(f"Row {row_idx}: Supplier '{name}' already exists")
+                savepoint.rollback()
+                continue
+
+            contact_person = row.get('contactPerson') or row.get('contact_person') or row.get('contact') or None
+            phone = row.get('phoneNumber') or row.get('phone_number') or row.get('phone') or row.get('mobile') or None
+            email = row.get('email') or None
+            gstin = row.get('gstin') or row.get('GSTIN') or None
+            address = row.get('address') or None
+            notes = row.get('notes') or row.get('remarks') or None
+
+            db_supplier = models.Supplier(
+                name=name,
+                contact_person=contact_person if contact_person else None,
+                phone=phone if phone else None,
+                email=email if email else None,
+                address=address if address else None,
+                gstin=gstin if gstin else None,
+                notes=notes if notes else None,
+                is_active=True
+            )
+            db.add(db_supplier)
+            savepoint.commit()
+            count += 1
+        except Exception as e:
+            savepoint.rollback()
+            errors.append(f"Row {row_idx} ({name}): {str(e)}")
+
+    db.commit()
+    return {"message": f"Successfully imported {count} suppliers", "errors": errors, "count": count}
 
 @router.post("", response_model=schemas.SupplierResponse)
 def create_supplier(supplier: schemas.SupplierCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):

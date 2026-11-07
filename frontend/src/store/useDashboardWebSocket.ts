@@ -42,6 +42,9 @@ export const useDashboardWebSocket = () => {
                         case 'INVOICE_CREATED':
                             processInvoiceEvent(data.cashierName, data.amount, data.totalRevenue);
                             break;
+                        case 'SALES_RETURN_CREATED':
+                            processInvoiceEvent(data.cashierName, -data.refundAmount, data.totalRevenue);
+                            break;
                         case 'REVENUE_CLEARED':
                             console.log("Triggering clearRevenue in store");
                             clearRevenue();

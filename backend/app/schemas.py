@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 from typing import List, Optional, Any, Dict
 from datetime import datetime
 from decimal import Decimal
@@ -48,11 +48,16 @@ class ProductCreate(BaseModel):
     unitOfMeasure: Optional[str] = Field(None, alias="unitOfMeasure")
     costPrice: Optional[Decimal] = Field(0, alias="costPrice")
     sellingPrice: Decimal = Field(..., alias="sellingPrice")
-    gstRate: Decimal = Field(0, alias="gstRate")
+    mrp: Optional[Decimal] = Field(None, alias="mrp")
+    gstRate: Decimal = Field(Decimal("0.00"), validation_alias=AliasChoices("gstRate", "taxRate", "gst_rate", "tax_rate"), serialization_alias="gstRate")
     hsnCode: Optional[str] = Field(None, alias="hsnCode")
     isTaxable: bool = Field(True, alias="isTaxable")
+    isInclusive: Optional[bool] = Field(False, alias="isInclusive")
+    taxType: Optional[str] = Field("TAXABLE", alias="taxType")
+    customCgstRate: Optional[Decimal] = Field(None, alias="customCgstRate")
+    customSgstRate: Optional[Decimal] = Field(None, alias="customSgstRate")
     low_stock_threshold: int = 10
-    currentStock: int = Field(0, alias="currentStock")
+    currentStock: int = Field(0, validation_alias=AliasChoices("currentStock", "stock"), serialization_alias="currentStock")
     model_config = ConfigDict(populate_by_name=True)
 
 class ProductUpdate(BaseModel):
@@ -64,12 +69,17 @@ class ProductUpdate(BaseModel):
     unitOfMeasure: Optional[str] = Field(None, alias="unitOfMeasure")
     costPrice: Optional[Decimal] = Field(None, alias="costPrice")
     sellingPrice: Optional[Decimal] = Field(None, alias="sellingPrice")
-    gstRate: Optional[Decimal] = Field(None, alias="gstRate")
+    mrp: Optional[Decimal] = Field(None, alias="mrp")
+    gstRate: Optional[Decimal] = Field(None, validation_alias=AliasChoices("gstRate", "taxRate", "gst_rate", "tax_rate"), serialization_alias="gstRate")
     hsnCode: Optional[str] = Field(None, alias="hsnCode")
     isTaxable: Optional[bool] = Field(None, alias="isTaxable")
+    isInclusive: Optional[bool] = Field(None, alias="isInclusive")
+    taxType: Optional[str] = Field(None, alias="taxType")
+    customCgstRate: Optional[Decimal] = Field(None, alias="customCgstRate")
+    customSgstRate: Optional[Decimal] = Field(None, alias="customSgstRate")
     low_stock_threshold: Optional[int] = None
     is_active: Optional[bool] = None
-    currentStock: Optional[int] = Field(None, alias="currentStock")
+    currentStock: Optional[int] = Field(None, validation_alias=AliasChoices("currentStock", "stock"), serialization_alias="currentStock")
     model_config = ConfigDict(populate_by_name=True)
 
 class ProductResponse(BaseModel):
@@ -84,9 +94,14 @@ class ProductResponse(BaseModel):
     costPrice: Decimal = Field(0, validation_alias="cost_price", serialization_alias="costPrice")
     price: Decimal
     sellingPrice: Decimal = Field(..., validation_alias="price", serialization_alias="sellingPrice")
+    mrp: Optional[Decimal] = Field(None, validation_alias="mrp", serialization_alias="mrp")
     gstRate: Decimal = Field(0, validation_alias="gst_rate", serialization_alias="gstRate")
     hsnCode: Optional[str] = Field(None, validation_alias="hsn_code", serialization_alias="hsnCode")
     isTaxable: bool = Field(True, validation_alias="is_taxable", serialization_alias="isTaxable")
+    isInclusive: bool = Field(False, validation_alias="is_inclusive", serialization_alias="isInclusive")
+    taxType: Optional[str] = Field("TAXABLE", validation_alias="tax_type", serialization_alias="taxType")
+    customCgstRate: Optional[Decimal] = Field(None, validation_alias="custom_cgst_rate", serialization_alias="customCgstRate")
+    customSgstRate: Optional[Decimal] = Field(None, validation_alias="custom_sgst_rate", serialization_alias="customSgstRate")
     low_stock_threshold: int
     isActive: bool = Field(True, validation_alias="is_active", serialization_alias="isActive")
     stock_quantity: int = 0
@@ -118,6 +133,7 @@ class CheckoutRequest(BaseModel):
     discountPercent: Optional[Decimal] = Field(Decimal("0.00"), alias="discountPercent")
     discountAmount: Optional[Decimal] = Field(Decimal("0.00"), alias="discountAmount")
     discountReason: Optional[str] = Field(None, alias="discountReason")
+    isInterstate: Optional[bool] = Field(False, alias="isInterstate")
     notes: Optional[str] = None
     model_config = ConfigDict(populate_by_name=True)
 
@@ -229,44 +245,114 @@ class SupplierResponse(BaseModel):
 # --- Feature B: Purchase Management ---
 class PurchaseItemCreate(BaseModel):
     productId: UUID = Field(..., alias="productId")
-    orderedQuantity: int = Field(..., alias="orderedQuantity")
-    unitCost: Decimal = Field(..., alias="unitCost")
+    purchaseUnit: Optional[str] = Field("Unit", alias="purchaseUnit")
+    conversionFactor: Optional[Decimal] = Field(Decimal("1.0"), alias="conversionFactor")
+    baseUnit: Optional[str] = Field(None, alias="baseUnit")
+    purchaseQuantity: Optional[Decimal] = Field(None, alias="purchaseQuantity")
+    purchaseUnitPrice: Optional[Decimal] = Field(None, alias="purchaseUnitPrice")
+    orderedQuantity: Optional[int] = Field(None, alias="orderedQuantity")
+    unitCost: Optional[Decimal] = Field(None, alias="unitCost")
     taxRate: Optional[Decimal] = Field(Decimal("0.00"), alias="taxRate")
+    taxType: Optional[str] = Field("TAXABLE", alias="taxType")
+    isInclusive: Optional[bool] = Field(False, alias="isInclusive")
     discountPercent: Optional[Decimal] = Field(Decimal("0.00"), alias="discountPercent")
+    discountAmount: Optional[Decimal] = Field(Decimal("0.00"), alias="discountAmount")
+    additionalCharges: Optional[Decimal] = Field(Decimal("0.00"), alias="additionalCharges")
     batchNumber: Optional[str] = Field(None, alias="batchNumber")
     expiryDate: Optional[datetime] = Field(None, alias="expiryDate")
     model_config = ConfigDict(populate_by_name=True)
 
 class PurchaseCreate(BaseModel):
     supplierId: UUID = Field(..., alias="supplierId")
+    status: Optional[str] = Field("ORDERED", alias="status")
+    isInterstate: Optional[bool] = Field(False, alias="isInterstate")
+    supplierInvoiceNumber: Optional[str] = Field(None, alias="supplierInvoiceNumber")
+    supplierInvoiceDate: Optional[datetime] = Field(None, alias="supplierInvoiceDate")
+    paymentTerms: Optional[str] = Field(None, alias="paymentTerms")
+    dueDate: Optional[datetime] = Field(None, alias="dueDate")
     notes: Optional[str] = None
     items: List[PurchaseItemCreate]
     model_config = ConfigDict(populate_by_name=True)
 
+class GrnBatchItem(BaseModel):
+    batchNumber: str = Field(..., alias="batchNumber")
+    receivedQuantity: Decimal = Field(..., alias="receivedQuantity")
+    acceptedQuantity: Decimal = Field(..., alias="acceptedQuantity")
+    damagedQuantity: Optional[Decimal] = Field(Decimal("0.00"), alias="damagedQuantity")
+    rejectedQuantity: Optional[Decimal] = Field(Decimal("0.00"), alias="rejectedQuantity")
+    mfgDate: Optional[datetime] = Field(None, alias="mfgDate")
+    expiryDate: Optional[datetime] = Field(None, alias="expiryDate")
+    purchaseCost: Optional[Decimal] = Field(None, alias="purchaseCost")
+    mrp: Optional[Decimal] = Field(None, alias="mrp")
+    notes: Optional[str] = None
+    model_config = ConfigDict(populate_by_name=True)
+
 class PurchaseReceiveItem(BaseModel):
     itemId: UUID = Field(..., alias="itemId")
-    receivedQuantity: int = Field(..., alias="receivedQuantity")
-    damagedQuantity: Optional[int] = Field(0, alias="damagedQuantity")
+    receivedQuantity: Decimal = Field(..., alias="receivedQuantity")
+    damagedQuantity: Optional[Decimal] = Field(Decimal("0.00"), alias="damagedQuantity")
+    rejectedQuantity: Optional[Decimal] = Field(Decimal("0.00"), alias="rejectedQuantity")
     batchNumber: Optional[str] = Field(None, alias="batchNumber")
     expiryDate: Optional[datetime] = Field(None, alias="expiryDate")
+    mfgDate: Optional[datetime] = Field(None, alias="mfgDate")
+    batches: Optional[List[GrnBatchItem]] = Field([], alias="batches")
+    sellingPrice: Optional[Decimal] = Field(None, alias="sellingPrice")
+    sellingGstRate: Optional[Decimal] = Field(None, alias="sellingGstRate")
     model_config = ConfigDict(populate_by_name=True)
 
 class PurchaseReceiveRequest(BaseModel):
+    supplierInvoiceNumber: Optional[str] = Field(None, alias="supplierInvoiceNumber")
+    supplierInvoiceDate: Optional[datetime] = Field(None, alias="supplierInvoiceDate")
+    invoiceTaxableAmount: Optional[Decimal] = Field(None, alias="invoiceTaxableAmount")
+    gstAmount: Optional[Decimal] = Field(None, alias="gstAmount")
+    cgstAmount: Optional[Decimal] = Field(None, alias="cgstAmount")
+    sgstAmount: Optional[Decimal] = Field(None, alias="sgstAmount")
+    igstAmount: Optional[Decimal] = Field(None, alias="igstAmount")
+    invoiceTotal: Optional[Decimal] = Field(None, alias="invoiceTotal")
+    notes: Optional[str] = None
     items: List[PurchaseReceiveItem]
+    model_config = ConfigDict(populate_by_name=True)
 
 class PurchaseItemResponse(BaseModel):
     id: UUID
-    productId: UUID = Field(..., validation_alias="product_id", serialization_alias="productId")
+    productId: UUID = Field(..., validation_alias=AliasChoices("product_id", "productId"), serialization_alias="productId")
     productName: Optional[str] = None
-    orderedQuantity: int = Field(..., validation_alias="ordered_quantity", serialization_alias="orderedQuantity")
-    receivedQuantity: int = Field(0, validation_alias="received_quantity", serialization_alias="receivedQuantity")
-    damagedQuantity: int = Field(0, validation_alias="damaged_quantity", serialization_alias="damagedQuantity")
-    unitCost: Decimal = Field(..., validation_alias="unit_cost", serialization_alias="unitCost")
-    taxRate: Decimal = Field(0, validation_alias="tax_rate", serialization_alias="taxRate")
-    discountPercent: Decimal = Field(0, validation_alias="discount_percent", serialization_alias="discountPercent")
-    lineTotal: Decimal = Field(..., validation_alias="line_total", serialization_alias="lineTotal")
-    batchNumber: Optional[str] = Field(None, validation_alias="batch_number", serialization_alias="batchNumber")
-    expiryDate: Optional[datetime] = Field(None, validation_alias="expiry_date", serialization_alias="expiryDate")
+    productSku: Optional[str] = None
+    purchaseUnit: Optional[str] = Field("Unit", validation_alias=AliasChoices("purchase_unit", "purchaseUnit"), serialization_alias="purchaseUnit")
+    conversionFactor: Optional[Decimal] = Field(Decimal("1.0"), validation_alias=AliasChoices("conversion_factor", "conversionFactor"), serialization_alias="conversionFactor")
+    baseUnit: Optional[str] = Field(None, validation_alias=AliasChoices("base_unit", "baseUnit"), serialization_alias="baseUnit")
+    purchaseQuantity: Optional[Decimal] = Field(None, validation_alias=AliasChoices("purchase_quantity", "purchaseQuantity"), serialization_alias="purchaseQuantity")
+    purchaseUnitPrice: Optional[Decimal] = Field(None, validation_alias=AliasChoices("purchase_unit_price", "purchaseUnitPrice"), serialization_alias="purchaseUnitPrice")
+    convertedQuantity: Optional[Decimal] = Field(None, validation_alias=AliasChoices("converted_quantity", "convertedQuantity"), serialization_alias="convertedQuantity")
+    orderedQuantity: int = Field(..., validation_alias=AliasChoices("ordered_quantity", "orderedQuantity"), serialization_alias="orderedQuantity")
+    receivedQuantity: int = Field(0, validation_alias=AliasChoices("received_quantity", "receivedQuantity"), serialization_alias="receivedQuantity")
+    damagedQuantity: int = Field(0, validation_alias=AliasChoices("damaged_quantity", "damagedQuantity"), serialization_alias="damagedQuantity")
+    unitCost: Decimal = Field(..., validation_alias=AliasChoices("unit_cost", "unitCost"), serialization_alias="unitCost")
+    taxRate: Decimal = Field(0, validation_alias=AliasChoices("tax_rate", "taxRate"), serialization_alias="taxRate")
+    taxType: Optional[str] = Field("TAXABLE", validation_alias=AliasChoices("tax_type", "taxType"), serialization_alias="taxType")
+    isInclusive: Optional[bool] = Field(False, validation_alias=AliasChoices("is_inclusive", "isInclusive"), serialization_alias="isInclusive")
+    taxableAmount: Optional[Decimal] = Field(Decimal("0.00"), validation_alias=AliasChoices("taxable_amount", "taxableAmount"), serialization_alias="taxableAmount")
+    cgstAmount: Optional[Decimal] = Field(Decimal("0.00"), validation_alias=AliasChoices("cgst_amount", "cgstAmount"), serialization_alias="cgstAmount")
+    sgstAmount: Optional[Decimal] = Field(Decimal("0.00"), validation_alias=AliasChoices("sgst_amount", "sgstAmount"), serialization_alias="sgstAmount")
+    igstAmount: Optional[Decimal] = Field(Decimal("0.00"), validation_alias=AliasChoices("igst_amount", "igstAmount"), serialization_alias="igstAmount")
+    discountPercent: Decimal = Field(0, validation_alias=AliasChoices("discount_percent", "discountPercent"), serialization_alias="discountPercent")
+    discountAmount: Optional[Decimal] = Field(Decimal("0.00"), validation_alias=AliasChoices("discount_amount", "discountAmount"), serialization_alias="discountAmount")
+    additionalCharges: Optional[Decimal] = Field(Decimal("0.00"), validation_alias=AliasChoices("additional_charges", "additionalCharges"), serialization_alias="additionalCharges")
+    lineTotal: Decimal = Field(..., validation_alias=AliasChoices("line_total", "lineTotal"), serialization_alias="lineTotal")
+    batchNumber: Optional[str] = Field(None, validation_alias=AliasChoices("batch_number", "batchNumber"), serialization_alias="batchNumber")
+    expiryDate: Optional[datetime] = Field(None, validation_alias=AliasChoices("expiry_date", "expiryDate"), serialization_alias="expiryDate")
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+class PurchaseAttachmentResponse(BaseModel):
+    id: UUID
+    purchaseId: Optional[UUID] = Field(None, validation_alias="purchase_id", serialization_alias="purchaseId")
+    grnId: Optional[UUID] = Field(None, validation_alias="grn_id", serialization_alias="grnId")
+    filename: str
+    fileType: Optional[str] = Field(None, validation_alias="file_type", serialization_alias="fileType")
+    fileSize: Optional[int] = Field(None, validation_alias="file_size", serialization_alias="fileSize")
+    documentCategory: str = Field("OTHER", validation_alias="document_category", serialization_alias="documentCategory")
+    createdAt: datetime = Field(..., validation_alias="created_at", serialization_alias="createdAt")
+    downloadUrl: Optional[str] = None
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 class PurchaseResponse(BaseModel):
@@ -275,13 +361,24 @@ class PurchaseResponse(BaseModel):
     supplierId: UUID = Field(..., validation_alias="supplier_id", serialization_alias="supplierId")
     supplierName: Optional[str] = None
     status: str
-    totalAmount: Decimal = Field(..., validation_alias="total_amount", serialization_alias="totalAmount")
+    subtotal: Optional[Decimal] = Field(Decimal("0.00"), validation_alias="subtotal", serialization_alias="subtotal")
     taxAmount: Decimal = Field(0, validation_alias="tax_amount", serialization_alias="taxAmount")
+    cgstAmount: Optional[Decimal] = Field(Decimal("0.00"), validation_alias="cgst_amount", serialization_alias="cgstAmount")
+    sgstAmount: Optional[Decimal] = Field(Decimal("0.00"), validation_alias="sgst_amount", serialization_alias="sgstAmount")
+    igstAmount: Optional[Decimal] = Field(Decimal("0.00"), validation_alias="igst_amount", serialization_alias="igstAmount")
     discountAmount: Decimal = Field(0, validation_alias="discount_amount", serialization_alias="discountAmount")
+    additionalCharges: Optional[Decimal] = Field(Decimal("0.00"), validation_alias="additional_charges", serialization_alias="additionalCharges")
+    totalAmount: Decimal = Field(..., validation_alias="total_amount", serialization_alias="totalAmount")
+    isInterstate: Optional[bool] = Field(False, validation_alias="is_interstate", serialization_alias="isInterstate")
+    supplierInvoiceNumber: Optional[str] = Field(None, validation_alias="supplier_invoice_number", serialization_alias="supplierInvoiceNumber")
+    supplierInvoiceDate: Optional[datetime] = Field(None, validation_alias="supplier_invoice_date", serialization_alias="supplierInvoiceDate")
+    paymentTerms: Optional[str] = Field(None, validation_alias="payment_terms", serialization_alias="paymentTerms")
+    dueDate: Optional[datetime] = Field(None, validation_alias="due_date", serialization_alias="dueDate")
     notes: Optional[str] = None
     createdAt: datetime = Field(..., validation_alias="created_at", serialization_alias="createdAt")
     receivedAt: Optional[datetime] = Field(None, validation_alias="received_at", serialization_alias="receivedAt")
     items: List[PurchaseItemResponse] = []
+    attachmentsCount: Optional[int] = 0
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 # --- Feature C: Inventory Stock Movement Ledger ---

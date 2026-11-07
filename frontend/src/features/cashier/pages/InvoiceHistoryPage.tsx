@@ -4,7 +4,8 @@ import {
     Download,
     Eye,
     RotateCcw,
-    Loader2
+    Loader2,
+    FileText
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
@@ -75,6 +76,29 @@ export const InvoiceHistoryPage = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const handleDownloadPDF = async (inv: InvoiceResponse) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/sales/invoices/${inv.id}/pdf`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            if (!res.ok) throw new Error("Failed to download PDF");
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${inv.invoiceNumber || inv.id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success("Tax invoice PDF downloaded!");
+        } catch (e) {
+            console.error("PDF download failed", e);
+            toast.error("Failed to download PDF invoice");
+        }
     };
 
     const handleOpenReturn = (inv: InvoiceResponse) => {
@@ -213,6 +237,15 @@ export const InvoiceHistoryPage = () => {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
+                                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                    onClick={() => handleDownloadPDF(inv)}
+                                                    title="Download Tax Invoice PDF"
+                                                >
+                                                    <FileText className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
                                                     className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                                                     onClick={() => handleOpenReturn(inv)}
                                                     title="Process Return"
@@ -233,8 +266,9 @@ export const InvoiceHistoryPage = () => {
             <Modal
                 isOpen={isDetailOpen}
                 onClose={() => setIsDetailOpen(false)}
-                title={`Invoice: ${selectedInvoice?.invoiceNumber || selectedInvoice?.id || ''}`}
+                title={`GST Tax Invoice: ${selectedInvoice?.invoiceNumber || selectedInvoice?.id || ''}`}
                 description={`Date: ${selectedInvoice?.invoiceDate} ${selectedInvoice?.invoiceTime} | Cashier: @${selectedInvoice?.cashierName || 'admin'}`}
+                className="max-w-4xl"
             >
                 {selectedInvoice && (
                     <div className="space-y-4 pt-2">
@@ -242,30 +276,77 @@ export const InvoiceHistoryPage = () => {
                             <div>
                                 <span className="text-muted-foreground">Customer: </span>
                                 <span className="font-semibold">{selectedInvoice.customerName || 'Walk-in'}</span>
+                                {selectedInvoice.customerPhone && (
+                                    <span className="text-muted-foreground text-xs ml-2 font-mono">({selectedInvoice.customerPhone})</span>
+                                )}
                             </div>
-                            <div>
-                                <span className="text-muted-foreground">Payment: </span>
-                                <span className="font-semibold">{selectedInvoice.paymentMode}</span>
+                            <div className="flex items-center gap-3">
+                                <div>
+                                    <span className="text-muted-foreground">Payment: </span>
+                                    <span className="font-semibold">{selectedInvoice.paymentMode}</span>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDownloadPDF(selectedInvoice)}
+                                    className="gap-1.5 h-8 text-xs"
+                                >
+                                    <Download className="h-3.5 w-3.5" />
+                                    PDF Invoice
+                                </Button>
                             </div>
                         </div>
 
-                        <div className="border rounded-lg overflow-hidden">
+                        <div className="border rounded-lg overflow-x-auto max-h-80">
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Product</TableHead>
+                                    <TableRow className="bg-muted/30">
+                                        <TableHead>Product / HSN</TableHead>
                                         <TableHead className="text-center">Qty</TableHead>
-                                        <TableHead className="text-right">Price</TableHead>
-                                        <TableHead className="text-right">Subtotal</TableHead>
+                                        <TableHead className="text-right">Rate</TableHead>
+                                        <TableHead className="text-right">Disc</TableHead>
+                                        <TableHead className="text-right">Taxable</TableHead>
+                                        <TableHead className="text-center">GST%</TableHead>
+                                        <TableHead className="text-right">CGST</TableHead>
+                                        <TableHead className="text-right">SGST</TableHead>
+                                        <TableHead className="text-right">IGST</TableHead>
+                                        <TableHead className="text-right">Total</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {selectedInvoice.items?.map((item, idx) => (
                                         <TableRow key={idx}>
-                                            <TableCell className="font-medium">{item.productName}</TableCell>
-                                            <TableCell className="text-center">{item.quantity}</TableCell>
-                                            <TableCell className="text-right">₹{item.unitPrice}</TableCell>
-                                            <TableCell className="text-right font-semibold">₹{item.subtotal || item.finalAmount}</TableCell>
+                                            <TableCell>
+                                                <div className="font-medium text-sm">{item.productName}</div>
+                                                {item.hsnCode && (
+                                                    <div className="text-[11px] text-muted-foreground font-mono">HSN: {item.hsnCode}</div>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-center text-sm">
+                                                {item.quantity} {item.unit || item.unitOfMeasure || ''}
+                                            </TableCell>
+                                            <TableCell className="text-right text-sm">₹{Number(item.unitPrice).toFixed(2)}</TableCell>
+                                            <TableCell className="text-right text-sm text-muted-foreground">
+                                                {Number(item.discountAmount || item.discount || 0) > 0 ? `₹${Number(item.discountAmount || item.discount).toFixed(2)}` : '-'}
+                                            </TableCell>
+                                            <TableCell className="text-right text-sm font-medium">
+                                                ₹{Number(item.taxableAmount || item.subtotal).toFixed(2)}
+                                            </TableCell>
+                                            <TableCell className="text-center text-xs">
+                                                <span className="px-1.5 py-0.5 rounded bg-muted font-mono">{Number(item.gstRate || 0)}%</span>
+                                            </TableCell>
+                                            <TableCell className="text-right text-sm text-muted-foreground">
+                                                {Number(item.cgstAmount || 0) > 0 ? `₹${Number(item.cgstAmount).toFixed(2)}` : '-'}
+                                            </TableCell>
+                                            <TableCell className="text-right text-sm text-muted-foreground">
+                                                {Number(item.sgstAmount || 0) > 0 ? `₹${Number(item.sgstAmount).toFixed(2)}` : '-'}
+                                            </TableCell>
+                                            <TableCell className="text-right text-sm text-muted-foreground">
+                                                {Number(item.igstAmount || 0) > 0 ? `₹${Number(item.igstAmount).toFixed(2)}` : '-'}
+                                            </TableCell>
+                                            <TableCell className="text-right font-semibold text-sm">
+                                                ₹{Number(item.finalAmount || item.total || (Number(item.subtotal) + Number(item.taxAmount || 0))).toFixed(2)}
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -273,19 +354,37 @@ export const InvoiceHistoryPage = () => {
                         </div>
 
                         <div className="flex flex-col items-end pt-2 space-y-1 text-sm border-t">
-                            <div className="flex justify-between w-48">
-                                <span className="text-muted-foreground">Subtotal:</span>
-                                <span>₹{Number(selectedInvoice.subtotal || selectedInvoice.grandTotal).toLocaleString()}</span>
+                            <div className="flex justify-between w-64">
+                                <span className="text-muted-foreground">Taxable Subtotal:</span>
+                                <span>₹{Number(selectedInvoice.subtotal || selectedInvoice.grandTotal).toFixed(2)}</span>
                             </div>
                             {Number(selectedInvoice.discountAmount || 0) > 0 && (
-                                <div className="flex justify-between w-48 text-emerald-600">
+                                <div className="flex justify-between w-64 text-emerald-600">
                                     <span>Discount:</span>
-                                    <span>-₹{Number(selectedInvoice.discountAmount).toLocaleString()}</span>
+                                    <span>-₹{Number(selectedInvoice.discountAmount).toFixed(2)}</span>
                                 </div>
                             )}
-                            <div className="flex justify-between w-48 text-base font-bold pt-1 border-t">
+                            {Number(selectedInvoice.cgstAmount || 0) > 0 && (
+                                <div className="flex justify-between w-64 text-muted-foreground">
+                                    <span>CGST Total:</span>
+                                    <span>+₹{Number(selectedInvoice.cgstAmount).toFixed(2)}</span>
+                                </div>
+                            )}
+                            {Number(selectedInvoice.sgstAmount || 0) > 0 && (
+                                <div className="flex justify-between w-64 text-muted-foreground">
+                                    <span>SGST Total:</span>
+                                    <span>+₹{Number(selectedInvoice.sgstAmount).toFixed(2)}</span>
+                                </div>
+                            )}
+                            {Number(selectedInvoice.igstAmount || 0) > 0 && (
+                                <div className="flex justify-between w-64 text-muted-foreground">
+                                    <span>IGST Total:</span>
+                                    <span>+₹{Number(selectedInvoice.igstAmount).toFixed(2)}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between w-64 text-base font-bold pt-1 border-t">
                                 <span>Grand Total:</span>
-                                <span className="text-primary">₹{Number(selectedInvoice.grandTotal).toLocaleString()}</span>
+                                <span className="text-primary">₹{Number(selectedInvoice.grandTotal).toFixed(2)}</span>
                             </div>
                         </div>
                     </div>

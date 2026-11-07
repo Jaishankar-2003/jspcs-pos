@@ -31,6 +31,7 @@ export const ShiftsPage = () => {
 
     // Modal states
     const [isOpenModalActive, setIsOpenModalActive] = useState(false);
+    const [isConfirmingOpen, setIsConfirmingOpen] = useState(false);
     const [isCloseModalActive, setIsCloseModalActive] = useState(false);
     const [openingCashInput, setOpeningCashInput] = useState('1000');
     const [actualCashInput, setActualCashInput] = useState('');
@@ -249,40 +250,81 @@ export const ShiftsPage = () => {
                 </CardContent>
             </Card>
 
-            {/* Open Shift Modal */}
+            {/* Open Shift Modal with Confirmation */}
             <Modal
                 isOpen={isOpenModalActive}
-                onClose={() => setIsOpenModalActive(false)}
-                title="Open Cashier Shift"
-                description="Enter the starting cash drawer float to begin."
+                onClose={() => {
+                    setIsOpenModalActive(false);
+                    setIsConfirmingOpen(false);
+                }}
+                title={isConfirmingOpen ? "Confirm Shift Opening" : "Open Cashier Shift"}
+                description={isConfirmingOpen ? "Review and confirm your opening float to start this cashier shift." : "Enter the starting cash drawer float to begin."}
             >
-                <div className="space-y-4 pt-2">
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Opening Cash Float (₹) *</label>
-                        <Input
-                            type="number"
-                            placeholder="e.g. 1000"
-                            value={openingCashInput}
-                            onChange={(e) => setOpeningCashInput(e.target.value)}
-                            className="text-lg font-bold h-11"
-                        />
+                {!isConfirmingOpen ? (
+                    <div className="space-y-4 pt-2">
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium">Opening Cash Float (₹) *</label>
+                            <Input
+                                type="number"
+                                placeholder="e.g. 1000"
+                                value={openingCashInput}
+                                onChange={(e) => setOpeningCashInput(e.target.value)}
+                                className="text-lg font-bold h-11"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium">Shift Notes</label>
+                            <Input
+                                placeholder="e.g. Morning counter shift"
+                                value={shiftNotes}
+                                onChange={(e) => setShiftNotes(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-3 border-t">
+                            <Button variant="outline" onClick={() => setIsOpenModalActive(false)}>Cancel</Button>
+                            <Button onClick={() => setIsConfirmingOpen(true)}>
+                                Next: Confirm Shift
+                            </Button>
+                        </div>
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Shift Notes</label>
-                        <Input
-                            placeholder="e.g. Morning counter shift"
-                            value={shiftNotes}
-                            onChange={(e) => setShiftNotes(e.target.value)}
-                        />
+                ) : (
+                    <div className="space-y-4 pt-2">
+                        <div className="p-4 rounded-xl border bg-emerald-500/10 border-emerald-500/20 space-y-2">
+                            <div className="flex items-center gap-2 text-emerald-700 font-semibold text-sm">
+                                <span>⚠️</span>
+                                <span>Shift Opening Confirmation</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                You are about to start a new cashier shift. Once opened, all register sales and drawer floats will be linked to your session.
+                            </p>
+                            <div className="pt-2 flex justify-between items-center text-sm font-bold border-t border-emerald-500/20">
+                                <span>Opening Cash Amount:</span>
+                                <span className="text-emerald-700 text-lg">
+                                    ₹{Number(openingCashInput || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                            {shiftNotes && (
+                                <p className="text-xs text-muted-foreground">
+                                    Notes: <span className="font-medium text-foreground">{shiftNotes}</span>
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-3 border-t">
+                            <Button variant="outline" onClick={() => setIsConfirmingOpen(false)} disabled={submitting}>
+                                Back
+                            </Button>
+                            <Button
+                                onClick={handleOpenShift}
+                                disabled={submitting}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                            >
+                                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                Confirm & Open Shift
+                            </Button>
+                        </div>
                     </div>
-                    <div className="flex justify-end gap-2 pt-3 border-t">
-                        <Button variant="outline" onClick={() => setIsOpenModalActive(false)}>Cancel</Button>
-                        <Button onClick={handleOpenShift} disabled={submitting}>
-                            {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                            Start Shift
-                        </Button>
-                    </div>
-                </div>
+                )}
             </Modal>
 
             {/* Close Shift Modal */}
